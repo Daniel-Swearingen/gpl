@@ -178,6 +178,7 @@ variable_declaration:
     simple_type  T_ID  optional_initializer {   
         Symbol_table* t = symbolTable.instance();
         Symbol* s = new Symbol();
+
         if($3 != NULL) {
             if ($1 & INT) {
                 s->setType($1);
@@ -195,35 +196,19 @@ variable_declaration:
         } else {
             if ($1 & INT) {
                 s->setType($1);
-                s->setValue(new int(0);
+                s->setValue(new int(0));
                 s->setName(*$2);
             } else if ($1 & DOUBLE) {
                 s->setType($1);
-                s->setValue(new double(0);
+                s->setValue(new double(0));
                 s->setName(*$2);
             } else if ($1 & STRING) {
                 s->setType($1);
-                s->setValue(new string(NULL);
+                s->setValue(new string(""));
                 s->setName(*$2);
             }
         }
         t->add(s);
-
-        /*
-        if ( $1 & INT) {
-            s->setType($1);
-            s->setValue(new int(42));
-            s->setName(*$2);
-        } else if ( $1 & DOUBLE) {
-            s->setType($1);
-            s->setValue(new double(3.14159));
-            s->setName(*$2);
-        } else if ( $1 & STRING) {
-            s->setType($1);
-            s->setValue(new string("Hello world"));
-            s->setName(*$2);
-        }
-        */
     }
     | simple_type  T_ID  T_LBRACKET expression T_RBRACKET {
         Symbol_table* t = symbolTable.instance();
@@ -283,7 +268,9 @@ optional_initializer:
     T_ASSIGN expression {
         $$ = $2;
     }
-    | empty
+    | empty {
+        $$ = NULL;
+    }
     ;
 
 //---------------------------------------------------------------------
@@ -459,17 +446,19 @@ assign_statement:
 //---------------------------------------------------------------------
 variable:
     T_ID {
-        if (symbolTable.lookup(*$1) != NULL) {
-            $$ = new Expression(new Variable(symbolTable.lookup(*$1)));   
+        Symbol_table* t = symbolTable.instance();
+        if (t->lookup(*$1) != NULL) {
+            $$ = new Expression(new Variable(t->lookup(*$1)));   
         } else {
             $$ = new Expression(0);
             //error
         }
     }
     | T_ID T_LBRACKET expression T_RBRACKET {
-        if (symbolTable.lookup(*$1) != NULL) {
+        Symbol_table* t = symbolTable.instance();
+        if (t->lookup(*$1) != NULL) {
             if ($3->getType() == 0) {
-                $$ = new Expression(new Variable(symbolTable.lookup(*$1),$3));
+                $$ = new Expression(new Variable(t->lookup(*$1),$3));
             }
         } else {
             $$ = new Expression(0);
@@ -483,15 +472,13 @@ variable:
 //---------------------------------------------------------------------
 expression:
     primary_expression {
-        $$ = $1
+        $$ = $1;
     }
     | expression T_OR expression {
         if ($1->getType() == 0 || $1->getType() == 1) {
             if ($3->getType() == 0 || $3->getType() == 1) {
                 $$ = new Expression($1,OR,$3);
             }
-        } else if ($1->getType() == 2 && $3->getType() == 2) {
-            $$ = new Expression($1,OR,$3);
         } else {
             //error
             $$ = new Expression(0);
@@ -502,92 +489,76 @@ expression:
             if ($3->getType() == 0 || $3->getType() == 1) {
                 $$ = new Expression($1,AND,$3);
             }
-        } else if ($1->getType() == 2 && $3->getType() == 2) {
-            $$ = new Expression($1,AND,$3);
         } else {
             //error
             $$ = new Expression(0);
         }
     }
     | expression T_LESS_EQUAL expression {
-        if ($1->getType() == 0 || $1->getType() == 1) {
-            if ($3->getType() == 0 || $3->getType() == 1) {
+        if ($1->getType() == 0 || $1->getType() == 1 || $1->getType() == 2) {
+            if ($3->getType() == 0 || $3->getType() == 1 || $3->getType() == 2) {
                 $$ = new Expression($1,LESS_THAN_EQUAL,$3);
             }
-        } else if ($1->getType() == 2 && $3->getType() == 2) {
-            $$ = new Expression($1,LESS_THAN_EQUAL,$3);
         } else {
             //error
             $$ = new Expression(0);
         }
     }
     | expression T_GREATER_EQUAL  expression {
-        if ($1->getType() == 0 || $1->getType() == 1) {
-            if ($3->getType() == 0 || $3->getType() == 1) {
+        if ($1->getType() == 0 || $1->getType() == 1 || $1->getType() == 2) {
+            if ($3->getType() == 0 || $3->getType() == 1 || $3->getType() == 2) {
                 $$ = new Expression($1,GREATER_THAN_EQUAL,$3);
             }
-        } else if ($1->getType() == 2 && $3->getType() == 2) {
-            $$ = new Expression($1,GREATER_THAN_EQUAL,$3);
         } else {
             //error
             $$ = new Expression(0);
         }
     }
     | expression T_LESS expression {
-        if ($1->getType() == 0 || $1->getType() == 1) {
-            if ($3->getType() == 0 || $3->getType() == 1) {
+        if ($1->getType() == 0 || $1->getType() == 1 || $1->getType() == 2) {
+            if ($3->getType() == 0 || $3->getType() == 1 || $3->getType() == 2) {
                 $$ = new Expression($1,LESS_THAN,$3);
             }
-        } else if ($1->getType() == 2 && $3->getType() == 2) {
-            $$ = new Expression($1,LESS_THAN,$3);
         } else {
             //error
             $$ = new Expression(0);
         }
     }
     | expression T_GREATER  expression {
-        if ($1->getType() == 0 || $1->getType() == 1) {
-            if ($3->getType() == 0 || $3->getType() == 1) {
+        if ($1->getType() == 0 || $1->getType() == 1 || $1->getType() == 2) {
+            if ($3->getType() == 0 || $3->getType() == 1 || $3->getType() == 2) {
                 $$ = new Expression($1,GREATER_THAN,$3);
             }
-        } else if ($1->getType() == 2 && $3->getType() == 2) {
-            $$ = new Expression($1,GREATER_THAN,$3);
         } else {
             //error
             $$ = new Expression(0);
         }
     }
     | expression T_EQUAL expression {
-        if ($1->getType() == 0 || $1->getType() == 1) {
-            if ($3->getType() == 0 || $3->getType() == 1) {
+        if ($1->getType() == 0 || $1->getType() == 1 || $1->getType() == 2) {
+            if ($3->getType() == 0 || $3->getType() == 1 || $3->getType() == 2) {
                 $$ = new Expression($1,EQUAL,$3);
             }
-        } else if ($1->getType() == 2 && $3->getType() == 2) {
-            $$ = new Expression($1,EQUAL,$3);
         } else {
             //error
             $$ = new Expression(0);
         }
     }
     | expression T_NOT_EQUAL expression {
-        if ($1->getType() == 0 || $1->getType() == 1) {
-            if ($3->getType() == 0 || $3->getType() == 1) {
+        if ($1->getType() == 0 || $1->getType() == 1 || $1->getType() == 2) {
+            if ($3->getType() == 0 || $3->getType() == 1 || $3->getType() == 2) {
                 $$ = new Expression($1,NOT_EQUAL,$3);
             }
-        } else if ($1->getType() == 2 && $3->getType() == 2) {
-            $$ = new Expression($1,NOT_EQUAL,$3);
         } else {
             //error
             $$ = new Expression(0);
         }
     }
     | expression T_PLUS expression {
-        if ($1->getType() == 0 || $1->getType() == 1) {
-            if ($3->getType() == 0 || $3->getType() == 1) {
+        if ($1->getType() == 0 || $1->getType() == 1 || $1->getType() == 2) {
+            if ($3->getType() == 0 || $3->getType() == 1 || $3->getType() == 2) {
                 $$ = new Expression($1,PLUS,$3);
             }
-        } else if ($1->getType() == 2 && $3->getType() == 2) {
-            $$ = new Expression($1,PLUS,$3);
         } else {
             //error
             $$ = new Expression(0);

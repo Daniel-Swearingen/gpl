@@ -43,7 +43,7 @@ void Symbol_table::print(ostream &os) {
 		} else if (symbol->getArrType() == "double"){
 			os << symbol->getArrType() << " " << symbol->getName() << " = " << symbol->get_double_value() << "\n";
 		} else if (symbol->getArrType() == "string"){
-			os << symbol->getType() << " " << symbol->getName() << " = " << "\"" << symbol->get_string_value() << "\"\n";
+			os << symbol->getType() << " " << symbol->getName() << " = " << "\"" << *symbol->get_string_value() << "\"\n";
 		} else if (symbol->getArrType() == "int array") {
 			for (int j = 0; j < symbol->getArrSize(); ++j) {
 				os << symbol->getType() << " " << symbol->getName() << "[" << j << "] = " << symbol->get_int_value(j) << "\n";
@@ -54,7 +54,7 @@ void Symbol_table::print(ostream &os) {
 			}
 		} else if (symbol->getArrType() == "string array") {
 			for (int j = 0; j < symbol->getArrSize(); ++j) {
-				os << symbol->getType() << " " << symbol->getName() << "[" << j << "] = \"" << symbol->get_string_value(j) << "\"\n";
+				os << symbol->getType() << " " << symbol->getName() << "[" << j << "] = \"" << *symbol->get_string_value(j) << "\"\n";
 			}
 		}
 	}

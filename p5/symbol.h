@@ -23,8 +23,8 @@ public:
 	const int get_int_value(int);
 	const double get_double_value();
 	const double get_double_value(int);
-	const string get_string_value();
-	const string get_string_value(int);
+	string* get_string_value();
+	string* get_string_value(int);
 
 	void printSymbol();
 	Symbol(){};

@@ -17,8 +17,8 @@ const double Symbol::get_double_value() {
 	return *(double*)_value;
 }
 
-const string Symbol::get_string_value() {
-	return *(string*)_value;
+string* Symbol::get_string_value() {
+	return (string*)_value;
 }
 
 const int Symbol::get_int_value(int index) {
@@ -29,8 +29,8 @@ const double Symbol::get_double_value(int index) {
 	return *((double*)_value+index);
 }
 
-const string Symbol::get_string_value(int index) {
-	return *((string*)_value+index);
+string* Symbol::get_string_value(int index) {
+	return ((string*)_value+index);
 }
 
 void* Symbol::getValue() {

@@ -8,80 +8,176 @@ Expression::Expression(){
 Expression::Expression(int intE) {
 	setInt(intE);
 	setType(0);
+	setIniType(0);
 }
 
 Expression::Expression(double doubleE) {
 	setDouble(doubleE);
 	setType(1);
+	setIniType(1);
 }
 
 Expression::Expression(string *stringE) {
 	setString(stringE);
 	setType(2);
+	setIniType(2);
 }
 
-Expression::Expression(expression *e1 ,Operator_type op,expression *e2) {
+Expression::Expression(Expression *e1 ,Operator_type op,Expression *e2) {
 	if (e2 != NULL) {
 		setLeft(e1);
 		setRight(e2);
 		setOp(op);
-		setType(3);	
+		if (e1->getType() == 2 || e2->getType() == 2) {
+			setType(2);
+		} else if (e1->getType() == 1 || e2->getType() == 1) {
+			setType(1);
+		} else if (e1->getType() == 0 && e2->getType() == 0) {
+			setType(0);
+		}
 	} else {
 		setLeft(e1);
 		setRight(NULL);
 		setOp(op);
-		setType(4);
+		if (e1->getType() == 0) {
+			setType(0);
+		} else if (e1->getType() == 1) {
+			setType(1);
+		}
 	}	
 }
 
 Expression::Expression(Variable *var) {
 	setVar(var);
-	setType(5);
+	if (var->getType() & INT) {
+		setType(0);
+		setInt(var->getInt());
+	} else if (var->getType() & DOUBLE) {
+		setType(1);
+		setDouble(var->getDouble());
+	} else if (var->getType() & STRING) {
+		setType(2);
+		setString(var->getString());
+	}
 }
 
 //evaluators
 
 int Expression::eval_int() {
 	int value;
-	if (getType() == 0) {
-		value = getInt();
-	} else if (getType() == 1) {
-		//error
-	} else if (getType() == 2) {
-		//error
-	} else if (getType() == 3) {
-		Expression* l = getl();
-		Expression* r = getr();
-		op = getOp();
-		if ((l->getType() == 0 || l->getType() == 1) && r->getType() == 0 || r->getType() == 1) {
-			if (op == PLUS) {
-				value = l->int_eval() + r->int_eval();
-			} else if (op == MINUS) {
-				value == l->int_eval() - r->int_eval();
-			} else if (op == DIVIDE) {
-				value == l->int_eval() / r->int_eval();
-			} else if (op == MULTIPLY) {
-				value = l->int_eval() * r->int_eval();
-			} else if (op == MOD) {
-				value = l->int_eval() % r->int_eval();
-			} else if (op == )
+	int lVal,rVal;
+	Operator_type op;
+	Expression *l = getl();
+	Expression *r = getr();
 
-		}
+	if (l != NULL) {
+		lVal = l->eval_int();
+		cout << "2: " << getInt() << endl;
 	}
+	if (r != NULL) {
+		rVal = r->eval_int();
+	}
+	if ((op = getOp()) == PLUS) {
+		value = lVal + rVal;
+	} else if (op == MULTIPLY) {
+		value = lVal * rVal;
+	}
+	
+	if (l == NULL) {
+		return getInt();
+	}
+	return value;
 }
 
 double Expression::eval_double() {
+	double value;
+	double lVal,rVal;
+	Operator_type op;
+	Expression *l = getl();
+	Expression *r = getr();
 
+	if (l != NULL) {
+		if (getType() == 0) {
+			lVal = (double)eval_int();
+		} else {
+			lVal = l->eval_double();
+		}
+	}
+	if (r != NULL) {
+		if (getType() == 0) {
+			rVal = (double)eval_int();
+		} else {
+			rVal = r->eval_double();
+		}
+	}
+	if ((op = getOp()) == PLUS) {
+		value = lVal + rVal;
+	} else if (op == MULTIPLY) {
+		value = lVal * rVal;
+	} else if (op == SIN) {
+		cout << lVal << endl;
+		value = sin(lVal/180*M_PI);
+	}
+	
+	if (l == NULL) {
+		if (getType() == 0) {
+			return (double)getInt();
+		} 
+		return getDouble();
+	}
+	return value;
 }
 
 string Expression::eval_string() {
+	string value;
+	string lVal,rVal;
+	Operator_type op;
+	stringstream ss;
+	Expression *l = getl();
+	Expression *r = getr();
 
+	if (l != NULL) {
+		if (getType() == 1) {
+			ss << eval_double();
+			lVal = ss.str();
+			ss.flush();
+		} else {
+			lVal = l->eval_string();
+		}
+	}
+	if (r != NULL) {
+		if (getType() == 1) {
+			//ss << eval_double();
+			//rVal = ss.str();
+			//ss.flush();
+		} else {
+			rVal = r->eval_string();	
+		}
+	}	
+	if (l == NULL || r == NULL) {
+		if (getType() == 0) {
+			ss << eval_int();
+		} else if (getType() == 1) {
+			ss << eval_double();
+		} else {
+			ss << *getString();
+		}
+		value = ss.str();
+		ss.flush();
+		return value;
+	} else if ((op = getOp()) == PLUS) {
+		value = lVal + rVal;
+	}
+	return value;
 }
 
 //setters
+void Expression::setIniType(int iniType) {
+	_iniType = iniType;
+}
 
 void Expression::setType(int type) {
-	if (type < 0 || type > 5) {
+	if (type < 0 || type > 2) {
 		//error
 	} else {
 		_type = type;
@@ -104,33 +200,33 @@ void Expression::setOp(Operator_type op) {
 	_op = op;
 }
 
-void Expression::setVar(variable *var) {
+void Expression::setVar(Variable *var) {
 	_var = var;
 }
 
-void Expression::setLeft(expression *left) {
+void Expression::setLeft(Expression *left) {
 	l = left;
 }
 
-void Expression::setRight(expression *right) {
+void Expression::setRight(Expression *right) {
 	r = right;
 }
 
-void Expression::setParent(expression *parent) {
-	p = parent;
-}
 
 //getters
+int Expression::getIniType() {
+	return _iniType;
+}
 Operator_type Expression::getOp() {
 	return _op;
 }
 
-Expression* Expression::getL() {
-	return _l;
+Expression* Expression::getl() {
+	return l;
 }
 
-Expression* Expression::getR() {
-	return _r;
+Expression* Expression::getr() {
+	return r;
 }
 
 int Expression::getType() {
