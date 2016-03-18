@@ -28,22 +28,51 @@ Expression::Expression(Expression *e1 ,Operator_type op,Expression *e2) {
 		setLeft(e1);
 		setRight(e2);
 		setOp(op);
-		if (e1->getType() == 2 || e2->getType() == 2) {
+		if (op == LESS_THAN || op == LESS_THAN_EQUAL || op == GREATER_THAN || op == GREATER_THAN_EQUAL ||
+			op == EQUAL || op == NOT_EQUAL || op == AND || op == OR) {
+			setType(0);
+		} else if (e1->getType() == 2 || e2->getType() == 2) {
 			setType(2);
 		} else if (e1->getType() == 1 || e2->getType() == 1) {
 			setType(1);
 		} else if (e1->getType() == 0 && e2->getType() == 0) {
 			setType(0);
 		}
+		cout << "Expression: \n\t" << "Type: " << getType() << endl;
+		if (e1->getType() == 2) {
+			cout << "\te1 String Value: " << e1->eval_string() << endl;
+		} else if (e1->getType() == 1) {
+			cout << "\te1 Double Value: " << e1->eval_double() << endl;
+		} else {
+			cout << "\te1 int Value: " << e1->eval_int() << endl;
+		}
+		if (e2->getType() == 2) {
+			cout << "\te2 String Value: " << e2->eval_string() << endl;
+		} else if (e2->getType() == 1) {
+			cout << "\te2 Double Value: " << e2->eval_double() << endl;
+		} else {
+			cout << "\te2 int Value: " << e2->eval_int() << endl;
+		}
+		cout << "\tOperator: " << operator_to_string(getOp()) << endl;
+		if (getType() == 0) {
+			cout << "\tEvals to: " << eval_int() << endl;
+		} else if (getType() == 1) {
+			cout << "\tEvals to: " << eval_double() << endl;
+		} else if (getType() == 2) {
+			cout << "\tEvals to: " << eval_string() << endl;
+		}
 	} else {
 		setLeft(e1);
 		setRight(NULL);
 		setOp(op);
-		if (e1->getType() == 0) {
+		if (op == SIN || op == COS || op == TAN || op == ASIN || op == ACOS || op == ATAN || op == SQRT) {
+			setType(1);
+		} else if (e1->getType() == 0) {
 			setType(0);
 		} else if (e1->getType() == 1) {
 			setType(1);
 		}
+		//cout << "Expression: " << eval_double() << ", OP: " << operator_to_string(getOp()) << endl;
 	}	
 }
 
@@ -66,21 +95,279 @@ Expression::Expression(Variable *var) {
 int Expression::eval_int() {
 	int value;
 	int lVal,rVal;
+	string lValS,rValS;
+	double lValD,rValD;
 	Operator_type op;
 	Expression *l = getl();
 	Expression *r = getr();
 
 	if (l != NULL) {
-		lVal = l->eval_int();
-		cout << "2: " << getInt() << endl;
+		if (l->getType() == 2) {
+			lValS = l->eval_string();
+		} if (l->getType() == 1) {
+			lValD = l->eval_double();
+		} else {
+			lVal = l->eval_int();
+		}
 	}
+
 	if (r != NULL) {
-		rVal = r->eval_int();
+		if (r->getType() == 2) {
+			rValS = r->eval_string();
+		} else if (r->getType() == 1) {
+			rValD = r->eval_double();
+		} else {
+			rVal = r->eval_int();
+		}
 	}
+
 	if ((op = getOp()) == PLUS) {
 		value = lVal + rVal;
 	} else if (op == MULTIPLY) {
 		value = lVal * rVal;
+	} else if (op == ABS) {
+		value = abs(lVal);
+	} else if (op == FLOOR) {
+		value = floor(lVal);
+	} else if (op == UNARY_MINUS) {
+		value = -lVal;
+	} else if (op == RANDOM) {
+		value = rand() % lVal;
+	} else if (op == NOT) {
+		if (lVal == 0) {
+			value = 1;
+		} else {
+			value = 0;
+		}
+	} else if (op == LESS_THAN) {
+		if (l->getType() == 2 && r->getType() == 2) {
+			if (lValS < rValS) {
+				value = 1;
+			} else {
+				value = 0;
+			}
+		} else if (l->getType() == 1 && r->getType() == 2) {
+			if (to_string(lValD) < rValS) {
+				value = 1;
+			} else {
+				value = 0;
+			}
+		} else if (l->getType() == 2 && r->getType() == 1) {
+			if (lValS < to_string(rValD)) {
+				value = 1;
+			} else {
+				value = 0;
+			}
+		} else if (l->getType() == 1 && r->getType() == 0) {
+			if (lValD < rVal) {
+				value = 1;
+			} else {
+				value = 0;
+			}
+		} else if (l->getType() == 0 && r->getType() == 1) {
+			if (lVal < rValD) {
+				value = 1;
+			} else {
+				value = 0;
+			}
+		} else if (l->getType() == 1 && r->getType() == 1) {
+			if (lValD < rValD) {
+				value = 1;
+			} else {
+				value = 0;
+			}
+		} else if (l->getType() == 0 && r->getType() == 2) {
+			if (to_string(lVal) < rValS) {
+				value = 1;
+			} else {
+				value = 0;
+			}
+		} else if (l->getType() == 2 && r->getType() == 0) {
+			if (lValS < to_string(rVal)){
+				value = 1;
+			} else {
+				value = 0;
+			}
+		} else if (lVal < rVal) {
+			value = 1;
+		} else {
+			value = 0;
+		}
+	} else if (op == LESS_THAN_EQUAL) {
+		if (l->getType() == 2 && r->getType() == 2) {
+			if (lValS <= rValS) {
+				value = 1;
+			} else {
+				value = 0;
+			}
+		} else if (l->getType() == 1 && r->getType() == 2) {
+			if (to_string(lValD) <= rValS) {
+				value = 1;
+			} else {
+				value = 0;
+			}
+		} else if (l->getType() == 2 && r->getType() == 1) {
+			if (lValS <= to_string(rValD)) {
+				value = 1;
+			} else {
+				value = 0;
+			}
+		} else if (l->getType() == 1 && r->getType() == 0) {
+			if (lValD <= rVal) {
+				value = 1;
+			} else {
+				value = 0;
+			}
+		} else if (l->getType() == 0 && r->getType() == 1) {
+			if (lVal <= rValD) {
+				value = 1;
+			} else {
+				value = 0;
+			}
+		} else if (l->getType() == 1 && r->getType() == 1) {
+			if (lValD <= rValD) {
+				value = 1;
+			} else {
+				value = 0;
+			}
+		} else if (l->getType() == 0 && r->getType() == 2) {
+			if (to_string(lVal) <= rValS) {
+				value = 1;
+			} else {
+				value = 0;
+			}
+		} else if (l->getType() == 2 && r->getType() == 0) {
+			if (lValS <= to_string(rVal)){
+				value = 1;
+			} else {
+				value = 0;
+			}
+		} else if (lVal <= rVal) {
+			value = 1;
+		} else {
+			value = 0;
+		}
+	} else if (op == GREATER_THAN) {
+		if (l->getType() == 2 && r->getType() == 2) {
+			if (lValS > rValS) {
+				value = 1;
+			} else {
+				value = 0;
+			}
+		} else
+		if (lVal > rVal) {
+			value = 1;
+		} else {
+			value = 0;
+		}
+	} else if (op == GREATER_THAN_EQUAL) {
+		if (l->getType() == 2 && r->getType() == 2) {
+			if (lValS >= rValS) {
+				value = 1;
+			} else {
+				value = 0;
+			}
+		} else
+		if (lVal >= rVal) {
+			value = 1;
+		} else {
+			value = 0;
+		}
+	} else if (op == EQUAL) {
+		if (l->getType() == 2 && r->getType() == 2) {
+			if (lValS == rValS) {
+				value = 1;
+			} else {
+				value = 0;
+			}
+		} else if (l->getType() == 1 && r->getType() == 2) {
+			if (to_string(lValD) == rValS) {
+				value = 1;
+			} else {
+				value = 0;
+			}
+		} else if (l->getType() == 2 && r->getType() == 1) {
+			if (lValS == to_string(rValD)) {
+				value = 1;
+			} else {
+				value = 0;
+			}
+		} else if (l->getType() == 1 && r->getType() == 0) {
+			if (lValD == rVal) {
+				value = 1;
+			} else {
+				value = 0;
+			}
+		} else if (l->getType() == 0 && r->getType() == 1) {
+			if (lVal == rValD) {
+				value = 1;
+			} else {
+				value = 0;
+			}
+		} else if (l->getType() == 1 && r->getType() == 1) {
+			if (lValD == rValD) {
+				value = 1;
+			} else {
+				value = 0;
+			}
+		} else if (l->getType() == 0 && r->getType() == 2) {
+			if (to_string(lVal) == rValS) {
+				value = 1;
+			} else {
+				value = 0;
+			}
+		} else if (l->getType() == 2 && r->getType() == 0) {
+			if (lValS == to_string(rVal)){
+				value = 1;
+			} else {
+				value = 0;
+			}
+		} else if (lVal == rVal) {
+			value = 1;
+		} else {
+			value = 0;
+		}
+	} else if (op == NOT_EQUAL) {
+		if (l->getType() == 2 && r->getType() == 2) {
+			if (lValS != rValS) {
+				value = 1;
+			} else {
+				value = 0;
+			}
+		} else
+		if (lVal != rVal) {
+			value = 1;
+		} else {
+			value = 0;
+		}
+	} else if (op == AND) {
+		if (l->getType() == 2 && r->getType() == 2) {
+			if (lValS != "0" && rValS != "0") {
+				value = 1;
+			} else {
+				value = 0;
+			}
+		} else
+		if (lVal && rVal) {
+			value = 1;
+		} else {
+			value = 0;
+		}
+	} else if (op == OR) {
+		if (l->getType() == 2 && r->getType() == 2) {
+			if (lValS != "0" || rValS != "0") {
+				value = 1;
+			} else {
+				value = 0;
+			}
+		} else
+		if (lVal || rVal) {
+			value = 1;
+		} else {
+			value = 0;
+		}
+	} else if (op == DIVIDE) {
+		value = lVal/rVal;
 	}
 	
 	if (l == NULL) {
@@ -97,15 +384,15 @@ double Expression::eval_double() {
 	Expression *r = getr();
 
 	if (l != NULL) {
-		if (getType() == 0) {
-			lVal = (double)eval_int();
+		if (l->getType() == 0) {
+			lVal = (double)l->eval_int();
 		} else {
 			lVal = l->eval_double();
 		}
 	}
 	if (r != NULL) {
-		if (getType() == 0) {
-			rVal = (double)eval_int();
+		if (r->getType() == 0) {
+			rVal = (double)r->eval_int();
 		} else {
 			rVal = r->eval_double();
 		}
@@ -115,20 +402,51 @@ double Expression::eval_double() {
 	} else if (op == MULTIPLY) {
 		value = lVal * rVal;
 	} else if (op == SIN) {
-		cout << lVal << endl;
 		value = sin(lVal/180*M_PI);
+	} else if (op == COS) {
+		value = cos(lVal/180*M_PI);
+	} else if (op == TAN) {
+		value = tan(lVal/180*M_PI);
+	} else if (op == ASIN) {
+		value = (asin(lVal)*180/M_PI);
+	} else if (op == ACOS) {
+		value = acos(lVal)*180/M_PI;
+	} else if (op == ATAN) {
+		value = atan(lVal)*180/M_PI;
+	} else if (op == SQRT) {
+		value = sqrt(lVal);
+	} else if (op == ABS) {
+		value = abs(lVal);
+	} else if (op == FLOOR) {
+		value = floor(lVal);
+	} else if (op == UNARY_MINUS) {
+		value = -lVal;
+	} else if (op == MINUS) {
+		value = lVal - rVal;
+	} else if (op == NOT) {
+		if (lVal == 0) {
+			value = 1;
+		} else {
+			value = 0;
+		}
+	} else if (op == DIVIDE) {
+		value = lVal / rVal;
 	}
 	
+	//cout << "\tValue: " << value << endl;
 	if (l == NULL) {
 		if (getType() == 0) {
 			return (double)getInt();
 		} 
 		return getDouble();
 	}
+
+	//cout << "\tValue: " << value << endl;
 	return value;
 }
 
 string Expression::eval_string() {
+
 	string value;
 	string lVal,rVal;
 	Operator_type op;
@@ -137,38 +455,56 @@ string Expression::eval_string() {
 	Expression *r = getr();
 
 	if (l != NULL) {
-		if (getType() == 1) {
-			ss << eval_double();
-			lVal = ss.str();
-			ss.flush();
-		} else {
+		if (l->getType() == 2) {
 			lVal = l->eval_string();
+		} else if (l->getType() == 1) {
+			ss << l->eval_double();
+			lVal = ss.str();
+			ss.str("");
+		} else if (l->getType() == 0) {
+			ss << l->eval_int();
+			lVal = ss.str();
+			ss.str("");
 		}
 	}
 	if (r != NULL) {
-		if (getType() == 1) {
-			//ss << eval_double();
-			//rVal = ss.str();
-			//ss.flush();
-		} else {
-			rVal = r->eval_string();	
+		if (r->getType() == 2) {
+			rVal = r->eval_string();
+		} else if (r->getType() == 1) {
+			ss << r->eval_double();
+			rVal = ss.str();
+			ss.str("");
+		} else if (r->getType() == 0) {
+			ss << r->eval_int();
+			rVal = ss.str();
+			ss.str("");
 		}
-	}	
-	if (l == NULL || r == NULL) {
-		if (getType() == 0) {
-			ss << eval_int();
-		} else if (getType() == 1) {
-			ss << eval_double();
-		} else {
-			ss << *getString();
-		}
-		value = ss.str();
-		ss.flush();
-		return value;
-	} else if ((op = getOp()) == PLUS) {
+	}
+	//cout << "lVal : rVal , Type: " << lVal << ":" << rVal << ", " << getType() << " | " << operator_to_string(getOp()) << endl;
+	if ((op = getOp()) == PLUS) {
 		value = lVal + rVal;
+	} else if (getType() == 1) {
+		ss << eval_double();
+		value = ss.str();
+		//cout << "\t\tValue: " << value << endl;
+	} else if (getType() == 0) {
+		ss << eval_int();
+		value = ss.str();
+	}
+	
+	if (l == NULL) {
+		if (getType() == 2) {
+			return *getString();
+		} else if (getType() == 1) {
+			ss << getDouble();
+			return ss.str();
+		} else if (getType() == 0) {
+			ss << getInt();
+			return ss.str();
+		}
 	}
 	return value;
+	
 }
 
 //setters

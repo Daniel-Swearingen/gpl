@@ -5,7 +5,8 @@ class Variable;
 #include "variable.h"
 #include <string>
 #include <sstream>
-#include <math.h>
+#include <cmath>
+#include <cstdlib>
 
 class Expression {
 public:
