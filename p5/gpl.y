@@ -178,16 +178,28 @@ variable_declaration:
     simple_type  T_ID  optional_initializer {   
         Symbol_table* t = symbolTable.instance();
         Symbol* s = new Symbol();
-
         if($3 != NULL) {
             if ($1 & INT) {
                 s->setType($1);
-                s->setValue(new int($3->eval_int()));
                 s->setName(*$2);
+                if ($3->getType() == 1) {
+                    s->setValue(new int(0));
+                    Error::error(Error::INVALID_TYPE_FOR_INITIAL_VALUE,"double",*$2,"int");
+                } else if ($3->getType() == 2) {
+                    s->setValue(new int(0));
+                    Error::error(Error::INVALID_TYPE_FOR_INITIAL_VALUE,"string",*$2,"int");
+                } else {
+                    s->setValue(new int($3->eval_int()));
+                }
             } else if ($1 & DOUBLE) {
                 s->setType($1);
-                s->setValue(new double($3->eval_double()));
                 s->setName(*$2);
+                if ($3->getType() == 2) {
+                    s->setValue(new double(0));
+                    Error::error(Error::INVALID_TYPE_FOR_INITIAL_VALUE,"string",*$2,"double");
+                } else {
+                    s->setValue(new double($3->eval_double()));
+                }
             } else if ($1 & STRING) {
                 s->setType($1);
                 s->setValue(new string($3->eval_string()));
@@ -449,11 +461,10 @@ variable:
     T_ID {
         Symbol_table* t = symbolTable.instance();
         if (t->lookup(*$1) != NULL) {
-            $$ = new Expression(new Variable(t->lookup(*$1)));   
+            $$ = new Expression(new Variable(t->lookup(*$1)));
         } else {
             $$ = new Expression(0);
-            Error::error(Error::UNDECLARED_VARIABLE,*$1);    
-
+            Error::error(Error::UNDECLARED_VARIABLE,*$1);
         }
     }
     | T_ID T_LBRACKET expression T_RBRACKET {
@@ -468,10 +479,11 @@ variable:
             Symbol_table* t = symbolTable.instance();
             if (t->lookup(*$1) != NULL) {
                 if ($3->getType() == 0) {
-                    if ( $3->eval_int() > t->lookup(*$1)->getArrSize() || $3->eval_int() < 0) {
-                        //stringstream ss;
+                    if (t->lookup(*$1)->getArrSize() == -1) {
                         $$ = new Expression(0);
-                        //ss << $3->eval_int();
+                        Error::error(Error::VARIABLE_NOT_AN_ARRAY,*$1);
+                    } else if ($3->eval_int() > t->lookup(*$1)->getArrSize() || $3->eval_int() < 0) {
+                        $$ = new Expression(0);
                         Error::error(Error::ARRAY_INDEX_OUT_OF_BOUNDS,*$1,$3->eval_string());                        
                     } else {
                         $$ = new Expression(new Variable(t->lookup(*$1),$3));
@@ -589,7 +601,17 @@ expression:
         }
     }
     | expression T_MINUS expression {
-        if ($1->getType() == 0 || $1->getType() == 1) {
+        if ($1->getType() == 2 && $3->getType() == 2) {
+            $$ = new Expression(0);
+            Error::error(Error::INVALID_LEFT_OPERAND_TYPE,"-");
+            Error::error(Error::INVALID_RIGHT_OPERAND_TYPE,"-");
+        } else if ($1->getType() == 2) {
+            $$ = new Expression(0);
+            Error::error(Error::INVALID_LEFT_OPERAND_TYPE,"-");
+        } else if ($3->getType() == 2) {
+            $$ = new Expression(0);
+            Error::error(Error::INVALID_RIGHT_OPERAND_TYPE,"-");
+        } else if ($1->getType() == 0 || $1->getType() == 1) {
             if ($3->getType() == 0 || $3->getType() == 1) {
                 $$ = new Expression($1,MINUS,$3);
             }
@@ -599,7 +621,17 @@ expression:
         }
     }
     | expression T_ASTERISK expression {
-        if ($1->getType() == 0 || $1->getType() == 1) {
+        if ($1->getType() == 2 && $3->getType() == 2) {
+            $$ = new Expression(0);
+            Error::error(Error::INVALID_LEFT_OPERAND_TYPE,"*");
+            Error::error(Error::INVALID_RIGHT_OPERAND_TYPE,"*");
+        } else if ($1->getType() == 2) {
+            $$ = new Expression(0);
+            Error::error(Error::INVALID_LEFT_OPERAND_TYPE,"*");
+        } else if ($3->getType() == 2) {
+            $$ = new Expression(0);
+            Error::error(Error::INVALID_RIGHT_OPERAND_TYPE,"*");
+        } else if ($1->getType() == 0 || $1->getType() == 1) {
             if ($3->getType() == 0 || $3->getType() == 1) {
                 $$ = new Expression($1,MULTIPLY,$3);
             }
@@ -609,13 +641,21 @@ expression:
         }
     }
     | expression T_DIVIDE expression {
-        if (($1->getType() != 2) && ($3->getType() != 2)) {
-            if ($3->eval_double() == 0) {
-                $$ = new Expression(0);
-                Error::error(Error::DIVIDE_BY_ZERO_AT_PARSE_TIME);
-            } else if ($3->getType() == 0 || $3->getType() == 1) {
-                $$ = new Expression($1,DIVIDE,$3);
-            }
+        if ($1->getType() == 2 && $3->getType() == 2) {
+            $$ = new Expression(0);
+            Error::error(Error::INVALID_LEFT_OPERAND_TYPE,"/");
+            Error::error(Error::INVALID_RIGHT_OPERAND_TYPE,"/");
+        } else if ($1->getType() == 2) {
+            $$ = new Expression(0);
+            Error::error(Error::INVALID_LEFT_OPERAND_TYPE,"/");
+        } else if ($3->getType() == 2) {
+            $$ = new Expression(0);
+            Error::error(Error::INVALID_RIGHT_OPERAND_TYPE,"/");
+        } else if ($3->eval_double() == 0) {
+            $$ = new Expression(0);
+            Error::error(Error::DIVIDE_BY_ZERO_AT_PARSE_TIME);
+        } else if ($3->getType() == 0 || $3->getType() == 1) {
+            $$ = new Expression($1,DIVIDE,$3);
         } else {
             //error
             $$ = new Expression(0);

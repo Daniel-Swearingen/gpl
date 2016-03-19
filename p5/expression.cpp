@@ -67,7 +67,7 @@ Expression::Expression(Expression *e1 ,Operator_type op,Expression *e2) {
 		setOp(op);
 		if (op == SIN || op == COS || op == TAN || op == ASIN || op == ACOS || op == ATAN || op == SQRT) {
 			setType(1);
-		} else if (op == FLOOR) {
+		} else if (op == FLOOR || op == NOT) {
 			setType(0);
 		} else if (e1->getType() == 0) {
 			setType(0);
@@ -133,6 +133,8 @@ int Expression::eval_int() {
 		value = lVal % rVal;
 	} else if (op == MULTIPLY) {
 		value = lVal * rVal;
+	} else if (op == MINUS) {
+		value = lVal - rVal;
 	} else if (op == ABS) {
 		value = abs(lVal);
 	} else if (op == FLOOR) {
@@ -290,8 +292,57 @@ int Expression::eval_int() {
 			} else {
 				value = 0;
 			}
-		} else
-		if (lVal > rVal) {
+		} else if (l->getType() == 1 && r->getType() == 2) {
+			ss << lValD;
+			if (ss.str() > rValS) {
+				value = 1;
+			} else {
+				value = 0;
+			}
+			ss.str("");
+		} else if (l->getType() == 2 && r->getType() == 1) {
+			ss << rValD;
+			if (lValS > ss.str()) {
+				value = 1;
+			} else {
+				value = 0;
+			}
+			ss.str("");
+		} else if (l->getType() == 1 && r->getType() == 0) {
+			if (lValD > rVal) {
+				value = 1;
+			} else {
+				value = 0;
+			}
+		} else if (l->getType() == 0 && r->getType() == 1) {
+			if (lVal > rValD) {
+				value = 1;
+			} else {
+				value = 0;
+			}
+		} else if (l->getType() == 1 && r->getType() == 1) {
+			if (lValD > rValD) {
+				value = 1;
+			} else {
+				value = 0;
+			}
+		} else if (l->getType() == 0 && r->getType() == 2) {
+			ss << lVal;
+			if (ss.str() > rValS) {
+				value = 1;
+			} else {
+				value = 0;
+			}
+			ss.str("");
+		} else if (l->getType() == 2 && r->getType() == 0) {
+			ss << rVal;
+			if (lValS > ss.str()){
+				value = 1;
+			} else {
+				value = 0;
+			}
+			ss.str("");
+		} else if (lVal > rVal) {
 			value = 1;
 		} else {
 			value = 0;
@@ -303,8 +354,57 @@ int Expression::eval_int() {
 			} else {
 				value = 0;
 			}
-		} else
-		if (lVal >= rVal) {
+		} else if (l->getType() == 1 && r->getType() == 2) {
+			ss << lValD;
+			if (ss.str() >= rValS) {
+				value = 1;
+			} else {
+				value = 0;
+			}
+			ss.str("");
+		} else if (l->getType() == 2 && r->getType() == 1) {
+			ss << rValD;
+			if (lValS >= ss.str()) {
+				value = 1;
+			} else {
+				value = 0;
+			}
+			ss.str("");
+		} else if (l->getType() == 1 && r->getType() == 0) {
+			if (lValD >= rVal) {
+				value = 1;
+			} else {
+				value = 0;
+			}
+		} else if (l->getType() == 0 && r->getType() == 1) {
+			if (lVal >= rValD) {
+				value = 1;
+			} else {
+				value = 0;
+			}
+		} else if (l->getType() == 1 && r->getType() == 1) {
+			if (lValD >= rValD) {
+				value = 1;
+			} else {
+				value = 0;
+			}
+		} else if (l->getType() == 0 && r->getType() == 2) {
+			ss << lVal;
+			if (ss.str() >= rValS) {
+				value = 1;
+			} else {
+				value = 0;
+			}
+			ss.str("");
+		} else if (l->getType() == 2 && r->getType() == 0) {
+			ss << rVal;
+			if (lValS >= ss.str()){
+				value = 1;
+			} else {
+				value = 0;
+			}
+			ss.str("");
+		} else if (lVal >= rVal) {
 			value = 1;
 		} else {
 			value = 0;
@@ -565,7 +665,12 @@ double Expression::eval_double() {
 	} else if (op == NOT) {
 		lVal = eval_int();
 	} else if (op == DIVIDE) {
-		value = lVal / rVal;
+		if (getType() == 0) {
+			value = eval_int();
+		} else {
+			value = lVal/rVal;
+		}
+		//value = lVal / rVal;
 	} else if (op == LESS_THAN || op == LESS_THAN_EQUAL || op == GREATER_THAN || op == GREATER_THAN_EQUAL ||
 			op == EQUAL || op == NOT_EQUAL || op == AND || op == OR) {
 		value = eval_int();
@@ -591,6 +696,7 @@ string Expression::eval_string() {
 	stringstream ss;
 	Expression *l = getl();
 	Expression *r = getr();
+	
 
 	if (l != NULL) {
 		if (l->getType() == 2) {
@@ -620,7 +726,17 @@ string Expression::eval_string() {
 	}
 	//cout << "lVal : rVal , Type: " << lVal << ":" << rVal << ", " << getType() << " | " << operator_to_string(getOp()) << endl;
 	if ((op = getOp()) == PLUS) {
-		value = lVal + rVal;
+		if (getType() == 0) {
+			ss << eval_int();
+			value = ss.str();
+			ss.str("");
+		} else if (getType() == 1) {
+			ss << eval_double();
+			value = ss.str();
+			ss.str("");
+		} else {
+			value = lVal + rVal;	
+		}
 	} else if (op == LESS_THAN || op == LESS_THAN_EQUAL || op == GREATER_THAN || op == GREATER_THAN_EQUAL ||
 			op == EQUAL || op == NOT_EQUAL || op == AND || op == OR) {
 		value = to_string(eval_int());
