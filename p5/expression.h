@@ -7,7 +7,7 @@ class Variable;
 #include <sstream>
 #include <cmath>
 #include <cstdlib>
-
+#include "error.h"
 class Expression {
 public:
 	//constructors

@@ -19,13 +19,6 @@ Symbol* Symbol_table::lookup(string name) {
 		}
 	}
 	return NULL;
-	/*
-	if (it == table.end()) {
-		return NULL;
-	} else {
-		return it->second;
-	}
-	*/
 }
 
 void Symbol_table::print(ostream &os) {

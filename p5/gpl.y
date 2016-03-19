@@ -211,42 +211,36 @@ variable_declaration:
         t->add(s);
     }
     | simple_type  T_ID  T_LBRACKET expression T_RBRACKET {
-        Symbol_table* t = symbolTable.instance();
-        Symbol* s = new Symbol();
-        s->setSize($4->eval_int());
-        s->setName(*$2);
-        if ( $1 & INT) {
-            s->setType(INT_ARRAY);
-            int* myIntArr[$4->eval_int()];
-            /*
-            for (int i = 0; i < $4; ++i) {
-                myIntArr[i] = new int(42);
+        if ($4->getType() != 0) {
+            if ($->getType() == 1) {
+                Error::error(Error::ARRAY_INDEX_MUST_BE_AN_INTEGER,"A double expression",*$2);
+            } else if ($4->getType() == 2) {
+                Error::error(Error::ARRAY_INDEX_MUST_BE_AN_INTEGER,"A string expression",*$2);
             }
-            */
-
-            s->setValue(*myIntArr);
-        } else if ( $1 & DOUBLE_ARRAY) {
-            s->setType(DOUBLE_ARRAY);
-            double* myDoubleArr = new double[$4->eval_int()];
-            /*
-            for (int i = 0; i < $4; ++i) {
-                myDoubleArr[i] = 3.14159;
-            } 
-            */           
-            s->setType(DOUBLE_ARRAY);
-            s->setValue(myDoubleArr);
-        } else if ( $1 & STRING_ARRAY) {
-            s->setType(STRING_ARRAY);
-            string* myStringArr = new string[$4->eval_int()];
-            /*
-            for (int i = 0; i < $4; ++i) {
-                myStringArr[i] = "Hello world";
+        } else if ($4->eval_int() == 0) {
+            Error::error(Error::INVALID_ARRAY_SIZE,*$2,"0");
+        } else {
+            Symbol_table* t = symbolTable.instance();
+            Symbol* s = new Symbol();
+            s->setSize($4->eval_int());
+            s->setName(*$2);
+            if ( $1 & INT) {
+                s->setType(INT_ARRAY);
+                int* myIntArr[$4->eval_int()];
+                s->setValue(*myIntArr);
+            } else if ( $1 & DOUBLE_ARRAY) {
+                s->setType(DOUBLE_ARRAY);
+                double* myDoubleArr = new double[$4-      
+                s->setType(DOUBLE_ARRAY);
+                s->setValue(myDoubleArr);
+            } else if ( $1 & STRING_ARRAY) {
+                s->setType(STRING_ARRAY);
+                string* myStringArr = new string[$4->eval_int()];
+                s->setType(STRING_ARRAY);
+                s->setValue(myStringArr);
             }
-            */
-            s->setType(STRING_ARRAY);
-            s->setValue(myStringArr);
+            t->add(s);
         }
-        t->add(s);
     }
     ;
 
@@ -455,15 +449,25 @@ variable:
         }
     }
     | T_ID T_LBRACKET expression T_RBRACKET {
-        Symbol_table* t = symbolTable.instance();
-        if (t->lookup(*$1) != NULL) {
-            if ($3->getType() == 0) {
-                $$ = new Expression(new Variable(t->lookup(*$1),$3));
+        cout << $3->getType() << endl;
+        if ($3->getType() != 0) {
+            if ($3->getType() == 1) {
+                Error::error(Error::ARRAY_INDEX_MUST_BE_AN_INTEGER,*$1,"A double expression");    
+            } else {
+                Error::error(Error::ARRAY_INDEX_MUST_BE_AN_INTEGER,*$1,"A string expression");
             }
-        } else {
             $$ = new Expression(0);
-            //error
-        }   
+        } else {
+            Symbol_table* t = symbolTable.instance();
+            if (t->lookup(*$1) != NULL) {
+                if ($3->getType() == 0) {
+                    $$ = new Expression(new Variable(t->lookup(*$1),$3));
+                }
+            } else {
+                $$ = new Expression(0);
+                //error
+            }   
+        }
     }
     | T_ID T_PERIOD T_ID
     | T_ID T_LBRACKET expression T_RBRACKET T_PERIOD T_ID
@@ -479,18 +483,24 @@ expression:
             if ($3->getType() == 0 || $3->getType() == 1) {
                 $$ = new Expression($1,OR,$3);
             }
-        } else {
+        } else if ($1->getType() == 2) {
             //error
+            Error::error(Error::INVALID_LEFT_OPERAND_TYPE,"||");
+            $$ = new Expression(0);
+        } else if ($3->getType() == 2) {
+            Error::error(Error::INVALID_RIGHT_OPERAND_TYPE,"||");
             $$ = new Expression(0);
         }
     }
     | expression T_AND expression {
-        if ($1->getType() == 0 || $1->getType() == 1) {
-            if ($3->getType() == 0 || $3->getType() == 1) {
-                $$ = new Expression($1,AND,$3);
-            }
-        } else {
+        if (($1->getType() == 0 || $1->getType() == 1) && ($3->getType() == 0 || $3->getType() == 1)) {
+            $$ = new Expression($1,AND,$3);
+        } else if ($1->getType() == 2) {
             //error
+            Error::error(Error::INVALID_LEFT_OPERAND_TYPE,"&&");
+            $$ = new Expression(0);
+        } else if ($3->getType() == 2) {
+            Error::error(Error::INVALID_RIGHT_OPERAND_TYPE,"&&");
             $$ = new Expression(0);
         }
     }
@@ -585,8 +595,11 @@ expression:
         }
     }
     | expression T_DIVIDE expression {
-        if ($1->getType() == 0 || $1->getType() == 1) {
-            if ($3->getType() == 0 || $3->getType() == 1) {
+        if (($1->getType() != 2) && ($3->getType() != 2)) {
+            if ($3->eval_double() == 0) {
+                $$ = new Expression(0);
+                Error::error(Error::DIVIDE_BY_ZERO_AT_PARSE_TIME);
+            } else if ($3->getType() == 0 || $3->getType() == 1) {
                 $$ = new Expression($1,DIVIDE,$3);
             }
         } else {
@@ -595,20 +608,41 @@ expression:
         }
     }
     | expression T_MOD expression {
-        if ($1->getType() == 0) {
-            if ($3->getType() == 0) {
+        if ($1->getType() == 0 && $3->getType() == 0) {
+            if ($3->eval_int() == 0) {
+                Error::error(Error::MOD_BY_ZERO_AT_PARSE_TIME);
+                $$ = new Expression(0);
+            } else if ($3->getType() == 0) {
                 $$ = new Expression($1,MOD,$3);
             }
         } else {
-            //error
-            $$ = new Expression(0);
+            if ($1->getType() != 0 && $3->getType() != 0) {
+                $$ = new Expression(0);
+                Error::error(Error::INVALID_LEFT_OPERAND_TYPE,"%");
+                Error::error(Error::INVALID_RIGHT_OPERAND_TYPE,"%");
+            } else if ($1->getType() != 0) {
+                $$ = new Expression(0);
+                Error::error(Error::INVALID_LEFT_OPERAND_TYPE,"%");
+            } else if ($3->getType() != 0) {
+                $$ = new Expression(0);
+                Error::error(Error::INVALID_RIGHT_OPERAND_TYPE,"%");
+            }
         }
     }
     | T_MINUS  expression {
+        if ($2->getType() == 2) {
+            Error::error(Error::INVALID_RIGHT_OPERAND_TYPE,"-");
+            $$ = new Expression(0);
+        }
         $$ = new Expression($2,UNARY_MINUS,NULL);
     }
     | T_NOT  expression {
-        $$ = new Expression($2,NOT,NULL);
+        if ($2->getType() == 2) {
+            Error::error(Error::INVALID_RIGHT_OPERAND_TYPE,"!");
+            $$ = new Expression(0);
+        } else {
+            $$ = new Expression($2,NOT,NULL);
+        }
     }
     | math_operator T_LPAREN expression T_RPAREN {
         $$ = new Expression($3,$1,NULL);
