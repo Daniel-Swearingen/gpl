@@ -491,7 +491,6 @@ variable:
                 }
             } else {
                 $$ = new Expression(0);
-                //error
             }   
         }
     }
