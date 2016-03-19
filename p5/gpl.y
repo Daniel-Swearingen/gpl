@@ -212,10 +212,10 @@ variable_declaration:
     }
     | simple_type  T_ID  T_LBRACKET expression T_RBRACKET {
         if ($4->getType() != 0) {
-            if ($->getType() == 1) {
-                Error::error(Error::ARRAY_INDEX_MUST_BE_AN_INTEGER,"A double expression",*$2);
+            if ($4->getType() == 1) {
+                Error::error(Error::INVALID_ARRAY_SIZE,*$2,$4->eval_string());
             } else if ($4->getType() == 2) {
-                Error::error(Error::ARRAY_INDEX_MUST_BE_AN_INTEGER,"A string expression",*$2);
+                Error::error(Error::INVALID_ARRAY_SIZE,*$2,$4->eval_string());
             }
         } else if ($4->eval_int() == 0) {
             Error::error(Error::INVALID_ARRAY_SIZE,*$2,"0");
@@ -226,17 +226,24 @@ variable_declaration:
             s->setName(*$2);
             if ( $1 & INT) {
                 s->setType(INT_ARRAY);
-                int* myIntArr[$4->eval_int()];
-                s->setValue(*myIntArr);
+                int* myIntArr = new int[$4->eval_int()];
+                for (int i = 0; i < $4->eval_int(); ++i) {
+                    myIntArr[i] = 0;
+                }
+                s->setValue(myIntArr);
             } else if ( $1 & DOUBLE_ARRAY) {
                 s->setType(DOUBLE_ARRAY);
-                double* myDoubleArr = new double[$4-      
-                s->setType(DOUBLE_ARRAY);
+                double* myDoubleArr = new double[$4->eval_int()];
+                for (int i = 0; i < $4->eval_int(); ++i) {
+                    myDoubleArr[i] = 0;
+                }
                 s->setValue(myDoubleArr);
             } else if ( $1 & STRING_ARRAY) {
                 s->setType(STRING_ARRAY);
                 string* myStringArr = new string[$4->eval_int()];
-                s->setType(STRING_ARRAY);
+                for (int i = 0; i < $4->eval_int(); ++i) {
+                    myStringArr[i] = "";
+                }
                 s->setValue(myStringArr);
             }
             t->add(s);
@@ -445,11 +452,11 @@ variable:
             $$ = new Expression(new Variable(t->lookup(*$1)));   
         } else {
             $$ = new Expression(0);
-            //error
+            Error::error(Error::UNDECLARED_VARIABLE,*$1);    
+
         }
     }
     | T_ID T_LBRACKET expression T_RBRACKET {
-        cout << $3->getType() << endl;
         if ($3->getType() != 0) {
             if ($3->getType() == 1) {
                 Error::error(Error::ARRAY_INDEX_MUST_BE_AN_INTEGER,*$1,"A double expression");    
@@ -461,7 +468,14 @@ variable:
             Symbol_table* t = symbolTable.instance();
             if (t->lookup(*$1) != NULL) {
                 if ($3->getType() == 0) {
-                    $$ = new Expression(new Variable(t->lookup(*$1),$3));
+                    if ( $3->eval_int() > t->lookup(*$1)->getArrSize() || $3->eval_int() < 0) {
+                        //stringstream ss;
+                        $$ = new Expression(0);
+                        //ss << $3->eval_int();
+                        Error::error(Error::ARRAY_INDEX_OUT_OF_BOUNDS,*$1,$3->eval_string());                        
+                    } else {
+                        $$ = new Expression(new Variable(t->lookup(*$1),$3));
+                    }
                 }
             } else {
                 $$ = new Expression(0);

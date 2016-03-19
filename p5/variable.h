@@ -10,12 +10,13 @@ public:
 	Variable(Symbol*,Expression*);
 	Gpl_type getType();
 	Symbol* getSymbol();
+	Expression* getExpression();
 	int getInt();
 	double getDouble();
 	string* getString();
 private:
 	Symbol *sym;
-	Expression *expr;
+	Expression *expr = NULL;
 };
 
 #endif

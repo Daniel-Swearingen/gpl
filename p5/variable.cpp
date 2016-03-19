@@ -24,15 +24,29 @@ Gpl_type Variable::getType() {
 Symbol* Variable::getSymbol() {
 	return sym;
 }
-
+Expression* Variable::getExpression() {
+	return expr;
+}
 int Variable::getInt() {
-	return getSymbol()->get_int_value();
+	if (getExpression() != NULL) {
+		return getSymbol()->get_int_value(getExpression()->eval_int());
+	} else {
+		return getSymbol()->get_int_value();
+	}
 }
 
 double Variable::getDouble() {
-	return getSymbol()->get_double_value();
+	if (getExpression() != NULL) {
+		return getSymbol()->get_double_value(getExpression()->eval_int());
+	} else {
+		return getSymbol()->get_double_value();
+	}
 }
 
 string* Variable::getString() {
-	return getSymbol()->get_string_value();
+	if (getExpression() != NULL) {
+		return getSymbol()->get_string_value(getExpression()->eval_int());
+	} else {
+		return getSymbol()->get_string_value();
+	}
 }

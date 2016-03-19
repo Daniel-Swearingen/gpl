@@ -22,7 +22,7 @@ string* Symbol::get_string_value() {
 }
 
 const int Symbol::get_int_value(int index) {
-	return *(((int *)_value)+index*8);
+	return *(((int*)_value)+index);
 }
 
 const double Symbol::get_double_value(int index) {
