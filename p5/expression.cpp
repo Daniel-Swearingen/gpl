@@ -127,9 +127,6 @@ int Expression::eval_int() {
 	if ((op = getOp()) == PLUS) {
 		value = lVal + rVal;
 	} else if (op == MOD) {
-		if (rVal == 0) {
-			Error::error(Error::INVALID_RIGHT_OPERAND_TYPE,"&&");
-		}
 		value = lVal % rVal;
 	} else if (op == MULTIPLY) {
 		value = lVal * rVal;

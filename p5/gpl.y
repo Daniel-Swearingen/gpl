@@ -505,29 +505,33 @@ expression:
         $$ = $1;
     }
     | expression T_OR expression {
-        if ($1->getType() == 0 || $1->getType() == 1) {
-            if ($3->getType() == 0 || $3->getType() == 1) {
-                $$ = new Expression($1,OR,$3);
-            }
-        } else if ($1->getType() == 2) {
-            //error
+        if ($1->getType() == 2 && $3->getType() == 2) {
+            $$ = new Expression(0);
             Error::error(Error::INVALID_LEFT_OPERAND_TYPE,"||");
-            $$ = new Expression(0);
-        } else if ($3->getType() == 2) {
             Error::error(Error::INVALID_RIGHT_OPERAND_TYPE,"||");
+        } else if ($1->getType() == 2) {
             $$ = new Expression(0);
+            Error::error(Error::INVALID_LEFT_OPERAND_TYPE,"||");
+        } else if ($3->getType() == 2) {
+            $$ = new Expression(0);
+            Error::error(Error::INVALID_RIGHT_OPERAND_TYPE,"||");
+        } else if (($1->getType() == 0 || $1->getType() == 1) && ($3->getType() == 0 || $3->getType() == 1)) {
+            $$ = new Expression($1,OR,$3);
         }
     }
     | expression T_AND expression {
-        if (($1->getType() == 0 || $1->getType() == 1) && ($3->getType() == 0 || $3->getType() == 1)) {
-            $$ = new Expression($1,AND,$3);
-        } else if ($1->getType() == 2) {
-            //error
+        if ($1->getType() == 2 && $3->getType() == 2){
+            $$ = new Expression(0);
             Error::error(Error::INVALID_LEFT_OPERAND_TYPE,"&&");
-            $$ = new Expression(0);
-        } else if ($3->getType() == 2) {
             Error::error(Error::INVALID_RIGHT_OPERAND_TYPE,"&&");
+        } else if ($1->getType() == 2) {
             $$ = new Expression(0);
+            Error::error(Error::INVALID_LEFT_OPERAND_TYPE,"&&");
+        } else if ($3->getType() == 2) {
+            $$ = new Expression(0);
+            Error::error(Error::INVALID_RIGHT_OPERAND_TYPE,"&&");
+        } else if (($1->getType() == 0 || $1->getType() == 1) && ($3->getType() == 0 || $3->getType() == 1)) {
+            $$ = new Expression($1,AND,$3);
         }
     }
     | expression T_LESS_EQUAL expression {
@@ -699,6 +703,9 @@ expression:
         }
     }
     | math_operator T_LPAREN expression T_RPAREN {
+        if ($3->getType() == 2) {
+            Error::error(Error::INVALID_RIGHT_OPERAND_TYPE,operator_to_string($1));
+        }
         $$ = new Expression($3,$1,NULL);
     }
     | variable geometric_operator variable
