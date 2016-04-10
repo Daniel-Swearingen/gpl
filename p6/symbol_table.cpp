@@ -31,12 +31,16 @@ void Symbol_table::print(ostream &os) {
 	
 	for (unsigned int i = 0; i < table.size(); ++i) {
 		symbol = lookup(used[i]);
+		symbol->printSymbol(os);
+		/*
 		if (symbol->getArrType() == "int"){
 			os << symbol->getArrType() << " " << symbol->getName() << " = " << symbol->get_int_value() << "\n";
 		} else if (symbol->getArrType() == "double"){
 			os << symbol->getArrType() << " " << symbol->getName() << " = " << symbol->get_double_value() << "\n";
 		} else if (symbol->getArrType() == "string"){
-			os << symbol->getType() << " " << symbol->getName() << " = " << "\"" << *symbol->get_string_value() << "\"\n";
+			os << symbol->getType() << " " << symbol->getName() << " = " << "\"" << symbol->get_string_value() << "\"\n";
+		} else if (symbol->getArrType() == "game_object") {
+			symbol->get_game_object_value()->print(symbol->getName(),os);
 		} else if (symbol->getArrType() == "int array") {
 			for (int j = 0; j < symbol->getArrSize(); ++j) {
 				os << symbol->getType() << " " << symbol->getName() << "[" << j << "] = " << symbol->get_int_value(j) << "\n";
@@ -47,9 +51,14 @@ void Symbol_table::print(ostream &os) {
 			}
 		} else if (symbol->getArrType() == "string array") {
 			for (int j = 0; j < symbol->getArrSize(); ++j) {
-				os << symbol->getType() << " " << symbol->getName() << "[" << j << "] = \"" << *symbol->get_string_value(j) << "\"\n";
+				os << symbol->getType() << " " << symbol->getName() << "[" << j << "] = \"" << symbol->get_string_value(j) << "\"\n";
+			}
+		} else if (symbol->getArrType() == "game_object array") {
+			for (int j = 0; j < symbol->getArrSize(); ++j) {
+				symbol->get_game_object_value(j)->print(symbol->getName(),os);
 			}
 		}
+		*/
 	}
 }
 

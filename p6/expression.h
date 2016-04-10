@@ -29,7 +29,7 @@ public:
 	void setIniType(int);
 	void setInt(int);
 	void setDouble(double);
-	void setString(string*);
+	void setString(string);
 	void setOp(Operator_type);
 	void setVar(Variable*);
 	void setLeft(Expression*);
@@ -42,7 +42,7 @@ public:
 	Expression* getl();
 	Expression* getr();
 	double getDouble();
-	string* getString();
+	string getString();
 	Operator_type getOp();
 
 private:
@@ -50,7 +50,7 @@ private:
 	int _iniType;
 	int _intE;
 	double _doubleE;
-	string *_stringE;
+	string _stringE;
 	Operator_type _op;
 	Variable *_var;
 	Expression *l = NULL;

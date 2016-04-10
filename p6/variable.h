@@ -13,7 +13,7 @@ public:
 	Expression* getExpression();
 	int getInt();
 	double getDouble();
-	string* getString();
+	string getString();
 private:
 	Symbol *sym;
 	Expression *expr = NULL;

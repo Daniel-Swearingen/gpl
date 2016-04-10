@@ -14,6 +14,7 @@ extern int line_count;            // current line in the input; from record.l
 using namespace std;
 
 Symbol_table symbolTable;
+Game_object *object_under_construction;
 %} 
 
 
@@ -144,8 +145,8 @@ Symbol_table symbolTable;
 %type <union_Gpl_type> T_DOUBLE
 %type <union_Gpl_type> T_STRING
 %type <union_Gpl_type> simple_type
+%type <union_Gpl_type> object_type
 
-//p5
 %type <union_Expression> optional_initializer
 %type <union_Expression> expression
 %type <union_Expression> primary_expression
@@ -183,40 +184,40 @@ variable_declaration:
                 s->setType($1);
                 s->setName(*$2);
                 if ($3->getType() == 1) {
-                    s->setValue(new int(0));
+                    s->set(new int(0));
                     Error::error(Error::INVALID_TYPE_FOR_INITIAL_VALUE,"double",*$2,"int");
                 } else if ($3->getType() == 2) {
-                    s->setValue(new int(0));
+                    s->set(new int(0));
                     Error::error(Error::INVALID_TYPE_FOR_INITIAL_VALUE,"string",*$2,"int");
                 } else {
-                    s->setValue(new int($3->eval_int()));
+                    s->set(new int($3->eval_int()));
                 }
             } else if ($1 & DOUBLE) {
                 s->setType($1);
                 s->setName(*$2);
                 if ($3->getType() == 2) {
-                    s->setValue(new double(0));
+                    s->set(new double(0));
                     Error::error(Error::INVALID_TYPE_FOR_INITIAL_VALUE,"string",*$2,"double");
                 } else {
-                    s->setValue(new double($3->eval_double()));
+                    s->set(new double($3->eval_double()));
                 }
             } else if ($1 & STRING) {
                 s->setType($1);
-                s->setValue(new string($3->eval_string()));
+                s->set(new string($3->eval_string()));
                 s->setName(*$2);
             }
         } else {
             if ($1 & INT) {
                 s->setType($1);
-                s->setValue(new int(0));
+                s->set(new int(0));
                 s->setName(*$2);
             } else if ($1 & DOUBLE) {
                 s->setType($1);
-                s->setValue(new double(0));
+                s->set(new double(0));
                 s->setName(*$2);
             } else if ($1 & STRING) {
                 s->setType($1);
-                s->setValue(new string(""));
+                s->set(new string(""));
                 s->setName(*$2);
             }
         }
@@ -242,21 +243,21 @@ variable_declaration:
                 for (int i = 0; i < $4->eval_int(); ++i) {
                     myIntArr[i] = 0;
                 }
-                s->setValue(myIntArr);
+                s->set(myIntArr);
             } else if ( $1 & DOUBLE_ARRAY) {
                 s->setType(DOUBLE_ARRAY);
                 double* myDoubleArr = new double[$4->eval_int()];
                 for (int i = 0; i < $4->eval_int(); ++i) {
                     myDoubleArr[i] = 0;
                 }
-                s->setValue(myDoubleArr);
+                s->set(myDoubleArr);
             } else if ( $1 & STRING_ARRAY) {
                 s->setType(STRING_ARRAY);
                 string* myStringArr = new string[$4->eval_int()];
                 for (int i = 0; i < $4->eval_int(); ++i) {
                     myStringArr[i] = "";
                 }
-                s->setValue(myStringArr);
+                s->set(myStringArr);
             }
             t->add(s);
         }
@@ -288,17 +289,51 @@ optional_initializer:
 
 //---------------------------------------------------------------------
 object_declaration:
-    object_type T_ID T_LPAREN parameter_list_or_empty T_RPAREN
-    | object_type T_ID T_LBRACKET expression T_RBRACKET
+    object_type T_ID {
+        if ($1 == TRIANGLE) {
+            object_under_construction = new Triangle();
+        } else if ($1 == PIXMAP) {
+            object_under_construction = new Pixmap();
+        } else if ($1 == CIRCLE) {
+            object_under_construction = new Circle();
+        } else if ($1 == RECTANGLE) {
+            object_under_construction = new Rectangle();
+        } else {
+            object_under_construction = new Textbox();
+        }
+        Symbol_table* t = symbolTable.instance();
+
+        Symbol *sym = new Symbol();
+        sym->setName(*$2);
+        sym->set(object_under_construction);
+        sym->setType(GAME_OBJECT);
+        t->add(sym);
+
+    } T_LPAREN parameter_list_or_empty T_RPAREN {
+    
+    }
+    | object_type T_ID T_LBRACKET expression T_RBRACKET {
+
+    }
     ;
 
 //---------------------------------------------------------------------
 object_type:
-    T_TRIANGLE
-    | T_PIXMAP
-    | T_CIRCLE
-    | T_RECTANGLE
-    | T_TEXTBOX
+    T_TRIANGLE{
+        $$ = TRIANGLE;
+    }
+    | T_PIXMAP {
+        $$ = PIXMAP;
+    }
+    | T_CIRCLE {
+        $$ = CIRCLE;
+    }
+    | T_RECTANGLE {
+        $$ = RECTANGLE;
+    }
+    | T_TEXTBOX {
+        $$ = TEXTBOX;
+    }
     ;
 
 //---------------------------------------------------------------------

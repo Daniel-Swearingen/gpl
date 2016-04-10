@@ -43,7 +43,7 @@ double Variable::getDouble() {
 	}
 }
 
-string* Variable::getString() {
+string Variable::getString() {
 	if (getExpression() != NULL) {
 		return getSymbol()->get_string_value(getExpression()->eval_int());
 	} else {

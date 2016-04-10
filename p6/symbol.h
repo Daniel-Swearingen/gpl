@@ -5,28 +5,44 @@
 #include <sstream>
 #include <iostream>
 #include "gpl_type.h"
+#include "game_object.h"
+#include "rectangle.h"
+#include "circle.h"
+#include "textbox.h"
+#include "pixmap.h"
+#include "triangle.h"
+
 using namespace std;
 
 class Symbol {
 public:
 	string getName();
 	string getType();
-	Gpl_type getGpl_type();
+	Gpl_type get_type();
 	string getArrType();
 	int getArrSize();
 	void* getValue();
 	void setType(Gpl_type);
 	void setName(string);
-	void setValue(void*);
+	void set(void*);
+	void set(int);
+	void set(double);
+	void set(string);
+	void set(int,int);
+	void set(double,int);
+	void set(string,int);
 	void setSize(int);
 	const int get_int_value();
 	const int get_int_value(int);
 	const double get_double_value();
 	const double get_double_value(int);
-	string* get_string_value();
-	string* get_string_value(int);
+	string get_string_value();
+	string get_string_value(int);
+	Game_object* get_game_object_value();
+	Game_object* get_game_object_value(int);
 
-	void printSymbol();
+	bool is_game_object();
+	void printSymbol(ostream&);
 	Symbol(){};
 	Symbol(Symbol*);
 private:
