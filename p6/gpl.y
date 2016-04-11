@@ -381,28 +381,40 @@ parameter_list :
 parameter:
     T_ID T_ASSIGN expression {
         Status stat;
+        Symbol_table* t = symbolTable.instance();
         if (*$1 == "size") {
-            Symbol_table* t = symbolTable.instance();
-            if (t->lookup(object_under_construction_name)->get_type() & TRIANGLE){
+            if (t->lookup(object_under_construction_name)->get_type() & 128 ) {
                 stat = object_under_construction->set_member_variable(*$1,$3->eval_int());
             } else {
                 stat = object_under_construction->set_member_variable(*$1,$3->eval_double());
             }
         } else if (*$1 == "x" || *$1 == "y" || *$1 == "w" || *$1 == "h" || *$1 == "visible" || *$1 == "proximity" || *$1 == "drawing_order" || *$1 == "radius" || *$1 == "space" ||*$1 == "user_int" || *$1 == "user_int2" || *$1 == "user_int3" || *$1 == "user_int4" || *$1 == "user_int5") {
-            stat = object_under_construction->set_member_variable(*$1,$3->eval_int());
+            if ($3->getType() > 0) {
+                stat = MEMBER_NOT_OF_GIVEN_TYPE;
+            } else {
+                stat = object_under_construction->set_member_variable(*$1,$3->eval_int());    
+            }
         } else if (*$1 == "red" || *$1 == "green" || *$1 == "blue" || *$1 == "skew" || *$1 == "rotation" || *$1 == "rotation" || *$1 == "user_double" || *$1 == "user_double2" || *$1 == "user_double3" || *$1 == "user_double4" || *$1 == "user_double5") {
+            
             stat = object_under_construction->set_member_variable(*$1,$3->eval_double());
         } else if (*$1 == "text" || *$1 == "filename" || *$1 == "user_string" || *$1 == "user_string2" || *$1 == "user_string3" || *$1 == "user_string4" || *$1 == "user_string5") {
-            object_under_construction->set_member_variable(*$1,$3->eval_string());
+            stat = object_under_construction->set_member_variable(*$1,$3->eval_string());
+        } else if (*$1 == "animation_block") {
+            if ($3->eval_animation_block()->get_parameter_symbol()->get_type() != t->lookup(object_under_construction_name)->get_type()) {
+                Error::error(Error::TYPE_MISMATCH_BETWEEN_ANIMATION_BLOCK_AND_OBJECT,object_under_construction_name,$3->eval_animation_block()->name());
+                
+            } else {
+                stat = object_under_construction->set_member_variable(*$1,$3->eval_animation_block());
+            }
         } else {
-            object_under_construction->set_member_variable(*$1,$3->eval_animation_block());
+            stat = MEMBER_NOT_DECLARED;
         }
 
 
         if (stat == MEMBER_NOT_OF_GIVEN_TYPE) {
-            Error::error(Error::INCORRECT_CONSTRUCTOR_PARAMETER_TYPE,object_under_construction_name);
+            Error::error(Error::INCORRECT_CONSTRUCTOR_PARAMETER_TYPE,object_under_construction_name,*$1);
         } else if (stat == MEMBER_NOT_DECLARED) {
-            Error::error(Error::UNKNOWN_CONSTRUCTOR_PARAMETER,object_under_construction_name);
+            Error::error(Error::UNKNOWN_CONSTRUCTOR_PARAMETER,t->lookup(object_under_construction_name)->getType(),*$1);
         }
     }
     ;
@@ -415,7 +427,6 @@ forward_declaration:
         sym->set(new Animation_block());
         sym->setName(*$3);
         sym->setType(ANIMATION_BLOCK);
-        
         sym->get_animation_block_value()->initialize($5, *$3);
         t->add(sym);
     }
@@ -448,28 +459,33 @@ animation_block:
 animation_parameter:
     object_type T_ID {
         Symbol_table* t = symbolTable.instance();
-        Symbol *sym = new Symbol();
-        if ($1 == TRIANGLE) {
-            sym->set(new Triangle());
-            sym->setType(TRIANGLE);
-        } else if ($1 == PIXMAP) {
-            sym->set(new Pixmap());
-            sym->setType(PIXMAP);
-        } else if ($1 == CIRCLE) {
-            sym->set(new Circle());
-            sym->setType(CIRCLE);
-        } else if ($1 == RECTANGLE) {
-            sym->set(new Rectangle());
-            sym->setType(RECTANGLE);
+        if (t->lookup(*$2) != NULL) {
+            Error::error(Error::ANIMATION_PARAMETER_NAME_NOT_UNIQUE,*$2);
+            $$ = NULL;
         } else {
-            sym->set(new Textbox());
-            sym->setType(TEXTBOX);
+            Symbol *sym = new Symbol();
+            if ($1 == TRIANGLE) {
+                sym->set(new Triangle());
+                sym->setType(TRIANGLE);
+            } else if ($1 == PIXMAP) {
+                sym->set(new Pixmap());
+                sym->setType(PIXMAP);
+            } else if ($1 == CIRCLE) {
+                sym->set(new Circle());
+                sym->setType(CIRCLE);
+            } else if ($1 == RECTANGLE) {
+                sym->set(new Rectangle());
+                sym->setType(RECTANGLE);
+            } else {
+                sym->set(new Textbox());
+                sym->setType(TEXTBOX);
+            }
+            sym->setName(*$2);
+            sym->get_game_object_value()->never_animate();
+            sym->get_game_object_value()->never_draw();
+            t->add(sym);
+            $$ = sym;
         }
-        sym->setName(*$2);
-        sym->get_game_object_value()->never_animate();
-        sym->get_game_object_value()->never_draw();
-        t->add(sym);
-        $$ = sym;
     }
     ;
 
@@ -620,11 +636,32 @@ variable:
     }
     | T_ID T_PERIOD T_ID {
         Symbol_table* t = symbolTable.instance();
-        $$ = new Expression(new Variable(t->lookup(*$1),*$3));
+        if (t->lookup(*$1) == NULL) {
+            Error::error(Error::UNDECLARED_VARIABLE,*$1);
+            $$ = new Expression(0);
+        } else {
+            int value1;
+            double value2;
+            string value3;
+            if (!(t->lookup(*$1)->get_type() & GAME_OBJECT)) {
+                Error::error(Error::LHS_OF_PERIOD_MUST_BE_OBJECT,*$1);
+                $$ = new Expression(0);
+            } else if (t->lookup(*$1)->get_game_object_value()->get_member_variable(*$3,value1) != OK && t->lookup(*$1)->get_game_object_value()->get_member_variable(*$3,value2) != OK && t->lookup(*$1)->get_game_object_value()->get_member_variable(*$3,value3) != OK) {
+                Error::error(Error::UNDECLARED_MEMBER,*$1,*$3);
+                $$ = new Expression(0);
+            } else {
+                $$ = new Expression(new Variable(t->lookup(*$1),*$3));
+            }
+        }
     }
     | T_ID T_LBRACKET expression T_RBRACKET T_PERIOD T_ID {
         Symbol_table* t = symbolTable.instance();
-        $$ = new Expression(new Variable(t->lookup(*$1),$3,*$6));
+        if (!(t->lookup(*$1)->get_type() & GAME_OBJECT)) {
+                Error::error(Error::LHS_OF_PERIOD_MUST_BE_OBJECT,*$1);
+                $$ = new Expression(0);
+        } else {
+            $$ = new Expression(new Variable(t->lookup(*$1),$3,*$6));
+        }
     }
     ;
 

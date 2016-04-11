@@ -43,6 +43,8 @@ Gpl_type Variable::getType() {
 			return DOUBLE;
 		} else if (getSymbol()->get_type() == STRING || getSymbol()->get_type() == STRING_ARRAY) {
 			return STRING;
+		} else if (getSymbol()->get_type() & GAME_OBJECT) {
+			return GAME_OBJECT;
 		} else {
 			return ANIMATION_BLOCK;
 		}
@@ -92,21 +94,22 @@ double Variable::getDouble() {
 }
 
 string* Variable::getString() {
-	string value;
+	string* value = new string();
 	if (getExpression() != NULL) {
 		if (getIsMemberVariable()) {
-			getSymbol()->get_game_object_value(getExpression()->eval_int())->get_member_variable(member,value);
+			getSymbol()->get_game_object_value(getExpression()->eval_int())->get_member_variable(member,*value);
 		} else {
 			return getSymbol()->getStringValue(getExpression()->eval_int());
 		}
 	} else {
 		if (getIsMemberVariable()) {
-			getSymbol()->get_game_object_value()->get_member_variable(member,value);
+			getSymbol()->get_game_object_value()->get_member_variable(member,*value);
+			return value;
 		} else {
 			return getSymbol()->getStringValue();
 		}
 	}
-	return &value;
+	return value;
 }
 
 bool Variable::getIsMemberVariable() {

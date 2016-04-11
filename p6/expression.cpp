@@ -67,7 +67,7 @@ Expression::Expression(Variable *var) {
 		setType(2);
 		setString(var->getString());
 	} else {
-		
+		setType(3);
 	}
 }
 
