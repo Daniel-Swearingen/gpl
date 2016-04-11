@@ -15,6 +15,7 @@ using namespace std;
 
 Symbol_table symbolTable;
 Game_object *object_under_construction;
+string object_under_construction_name;
 %} 
 
 
@@ -27,6 +28,7 @@ Game_object *object_under_construction;
  Gpl_type       union_Gpl_type;
  Expression     *union_Expression;
  Operator_type  union_Operator_type;
+ Symbol*        union_Symbol;
 }
 
 %error-verbose
@@ -146,6 +148,7 @@ Game_object *object_under_construction;
 %type <union_Gpl_type> T_STRING
 %type <union_Gpl_type> simple_type
 %type <union_Gpl_type> object_type
+%type <union_Symbol>   animation_parameter
 
 %type <union_Expression> optional_initializer
 %type <union_Expression> expression
@@ -290,30 +293,52 @@ optional_initializer:
 //---------------------------------------------------------------------
 object_declaration:
     object_type T_ID {
+        object_under_construction_name = *$2;
+        Symbol *sym = new Symbol();
         if ($1 == TRIANGLE) {
             object_under_construction = new Triangle();
+            sym->setType(TRIANGLE);
         } else if ($1 == PIXMAP) {
             object_under_construction = new Pixmap();
+            sym->setType(PIXMAP);
         } else if ($1 == CIRCLE) {
             object_under_construction = new Circle();
+            sym->setType(CIRCLE);
         } else if ($1 == RECTANGLE) {
             object_under_construction = new Rectangle();
+            sym->setType(RECTANGLE);
         } else {
             object_under_construction = new Textbox();
+            sym->setType(TEXTBOX);
         }
         Symbol_table* t = symbolTable.instance();
-
-        Symbol *sym = new Symbol();
         sym->setName(*$2);
         sym->set(object_under_construction);
-        sym->setType(GAME_OBJECT);
         t->add(sym);
-
-    } T_LPAREN parameter_list_or_empty T_RPAREN {
-    
-    }
+    } T_LPAREN parameter_list_or_empty T_RPAREN
     | object_type T_ID T_LBRACKET expression T_RBRACKET {
-
+        Symbol_table* t = symbolTable.instance();
+        Symbol *sym = new Symbol();
+        sym->setName(*$2);
+        sym->setSize($4->eval_int());
+        if ($1 == TRIANGLE) {
+            Triangle* myTriangleArr = new Triangle[$4->eval_int()];
+            sym->set(myTriangleArr);
+            sym->setType(TRIANGLE_ARRAY);
+        } else if ($1 == PIXMAP) {
+            sym->set(new Pixmap[$4->eval_int()]);
+            sym->setType(PIXMAP_ARRAY);
+        } else if ($1 == CIRCLE) {
+            sym->set(new Circle[$4->eval_int()]);
+            sym->setType(CIRCLE_ARRAY);
+        } else if ($1 == RECTANGLE) {
+            sym->set(new Rectangle[$4->eval_int()]);
+            sym->setType(RECTANGLE_ARRAY);
+        } else {
+            sym->set(new Textbox[$4->eval_int()]);
+            sym->setType(TEXTBOX_ARRAY);
+        }
+        t->add(sym);
     }
     ;
 
@@ -338,24 +363,62 @@ object_type:
 
 //---------------------------------------------------------------------
 parameter_list_or_empty :
-    parameter_list
+    parameter_list {
+
+    }
     | empty
     ;
 
 //---------------------------------------------------------------------
 parameter_list :
     parameter_list T_COMMA parameter
-    | parameter
+    | parameter {
+
+    }
     ;
 
 //---------------------------------------------------------------------
 parameter:
-    T_ID T_ASSIGN expression
+    T_ID T_ASSIGN expression {
+        Status stat;
+        if (*$1 == "size") {
+            Symbol_table* t = symbolTable.instance();
+            if (t->lookup(object_under_construction_name)->get_type() & TRIANGLE){
+                stat = object_under_construction->set_member_variable(*$1,$3->eval_int());
+            } else {
+                stat = object_under_construction->set_member_variable(*$1,$3->eval_double());
+            }
+        } else if (*$1 == "x" || *$1 == "y" || *$1 == "w" || *$1 == "h" || *$1 == "visible" || *$1 == "proximity" || *$1 == "drawing_order" || *$1 == "radius" || *$1 == "space" ||*$1 == "user_int" || *$1 == "user_int2" || *$1 == "user_int3" || *$1 == "user_int4" || *$1 == "user_int5") {
+            stat = object_under_construction->set_member_variable(*$1,$3->eval_int());
+        } else if (*$1 == "red" || *$1 == "green" || *$1 == "blue" || *$1 == "skew" || *$1 == "rotation" || *$1 == "rotation" || *$1 == "user_double" || *$1 == "user_double2" || *$1 == "user_double3" || *$1 == "user_double4" || *$1 == "user_double5") {
+            stat = object_under_construction->set_member_variable(*$1,$3->eval_double());
+        } else if (*$1 == "text" || *$1 == "filename" || *$1 == "user_string" || *$1 == "user_string2" || *$1 == "user_string3" || *$1 == "user_string4" || *$1 == "user_string5") {
+            object_under_construction->set_member_variable(*$1,$3->eval_string());
+        } else {
+            object_under_construction->set_member_variable(*$1,$3->eval_animation_block());
+        }
+
+
+        if (stat == MEMBER_NOT_OF_GIVEN_TYPE) {
+            Error::error(Error::INCORRECT_CONSTRUCTOR_PARAMETER_TYPE,object_under_construction_name);
+        } else if (stat == MEMBER_NOT_DECLARED) {
+            Error::error(Error::UNKNOWN_CONSTRUCTOR_PARAMETER,object_under_construction_name);
+        }
+    }
     ;
 
 //---------------------------------------------------------------------
 forward_declaration:
-    T_FORWARD T_ANIMATION T_ID T_LPAREN animation_parameter T_RPAREN
+    T_FORWARD T_ANIMATION T_ID T_LPAREN animation_parameter T_RPAREN {
+        Symbol_table* t = symbolTable.instance();
+        Symbol* sym = new Symbol();
+        sym->set(new Animation_block());
+        sym->setName(*$3);
+        sym->setType(ANIMATION_BLOCK);
+        
+        sym->get_animation_block_value()->initialize($5, *$3);
+        t->add(sym);
+    }
     ;
 
 //---------------------------------------------------------------------
@@ -383,7 +446,31 @@ animation_block:
 
 //---------------------------------------------------------------------
 animation_parameter:
-    object_type T_ID
+    object_type T_ID {
+        Symbol_table* t = symbolTable.instance();
+        Symbol *sym = new Symbol();
+        if ($1 == TRIANGLE) {
+            sym->set(new Triangle());
+            sym->setType(TRIANGLE);
+        } else if ($1 == PIXMAP) {
+            sym->set(new Pixmap());
+            sym->setType(PIXMAP);
+        } else if ($1 == CIRCLE) {
+            sym->set(new Circle());
+            sym->setType(CIRCLE);
+        } else if ($1 == RECTANGLE) {
+            sym->set(new Rectangle());
+            sym->setType(RECTANGLE);
+        } else {
+            sym->set(new Textbox());
+            sym->setType(TEXTBOX);
+        }
+        sym->setName(*$2);
+        sym->get_game_object_value()->never_animate();
+        sym->get_game_object_value()->never_draw();
+        t->add(sym);
+        $$ = sym;
+    }
     ;
 
 //---------------------------------------------------------------------
@@ -525,12 +612,20 @@ variable:
                     }
                 }
             } else {
+               
+
                 $$ = new Expression(0);
             }   
         }
     }
-    | T_ID T_PERIOD T_ID
-    | T_ID T_LBRACKET expression T_RBRACKET T_PERIOD T_ID
+    | T_ID T_PERIOD T_ID {
+        Symbol_table* t = symbolTable.instance();
+        $$ = new Expression(new Variable(t->lookup(*$1),*$3));
+    }
+    | T_ID T_LBRACKET expression T_RBRACKET T_PERIOD T_ID {
+        Symbol_table* t = symbolTable.instance();
+        $$ = new Expression(new Variable(t->lookup(*$1),$3,*$6));
+    }
     ;
 
 //---------------------------------------------------------------------
@@ -752,7 +847,6 @@ primary_expression:
     }
     | variable {
         $$ = $1;
-        //create variable then create new expression obj using var constructor
     }
     | T_INT_CONSTANT {
         $$ = new Expression($1);

@@ -8,6 +8,7 @@ class Variable;
 #include <cmath>
 #include <cstdlib>
 #include "error.h"
+#include "animation_block.h"
 
 class Expression {
 public:
@@ -24,12 +25,14 @@ public:
 	int eval_int();
 	double eval_double();
 	string eval_string();
+	Animation_block* eval_animation_block();
 	//setters
 	void setType(int);
 	void setIniType(int);
 	void setInt(int);
 	void setDouble(double);
-	void setString(string);
+	void setString(string*);
+	void setAnimation_block(Animation_block*);
 	void setOp(Operator_type);
 	void setVar(Variable*);
 	void setLeft(Expression*);
@@ -42,7 +45,7 @@ public:
 	Expression* getl();
 	Expression* getr();
 	double getDouble();
-	string getString();
+	string *getString();
 	Operator_type getOp();
 
 private:
@@ -51,6 +54,7 @@ private:
 	int _intE;
 	double _doubleE;
 	string _stringE;
+	Animation_block *_animation_blockE;
 	Operator_type _op;
 	Variable *_var;
 	Expression *l = NULL;

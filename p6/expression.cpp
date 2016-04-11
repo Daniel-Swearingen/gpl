@@ -18,7 +18,7 @@ Expression::Expression(double doubleE) {
 }
 
 Expression::Expression(string *stringE) {
-	setString(*stringE);
+	setString(stringE);
 	setType(2);
 	setIniType(2);
 }
@@ -66,6 +66,8 @@ Expression::Expression(Variable *var) {
 	} else if (var->getType() & STRING) {
 		setType(2);
 		setString(var->getString());
+	} else {
+		
 	}
 }
 
@@ -725,7 +727,7 @@ string Expression::eval_string() {
 	
 	if (l == NULL) {
 		if (getType() == 2) {
-			return getString();
+			return *getString();
 		} else if (getType() == 1) {
 			ss << getDouble();
 			return ss.str();
@@ -736,6 +738,10 @@ string Expression::eval_string() {
 	}
 	return value;
 	
+}
+
+Animation_block* Expression::eval_animation_block() {
+	return _var->getAnimationBlock();
 }
 
 //setters
@@ -759,8 +765,12 @@ void Expression::setDouble(double doubleE) {
 	_doubleE = doubleE;
 }
 
-void Expression::setString(string stringE) {
-	_stringE = stringE;
+void Expression::setString(string *stringE) {
+	_stringE = *stringE;
+}
+
+void Expression::setAnimation_block(Animation_block* animation_blockE) {
+	_animation_blockE = animation_blockE;
 }
 
 void Expression::setOp(Operator_type op) {
@@ -808,6 +818,6 @@ double Expression::getDouble() {
 	return _doubleE;
 }
 
-string Expression::getString() {
-	return _stringE;
+string* Expression::getString() {
+	return &_stringE;
 }

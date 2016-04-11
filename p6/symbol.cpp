@@ -21,8 +21,16 @@ string Symbol::get_string_value() {
 	return *(string*)_value;
 }
 
+string* Symbol::getStringValue() {
+	return (string*)_value;
+}
+
 Game_object* Symbol::get_game_object_value() {
 	return (Game_object*)_value;
+}
+
+Animation_block* Symbol::get_animation_block_value() {
+	return (Animation_block*)_value;
 }
 
 const int Symbol::get_int_value(int index) {
@@ -37,7 +45,30 @@ string Symbol::get_string_value(int index) {
 	return *((string*)_value+index);
 }
 
+string* Symbol::getStringValue(int index) {
+	return ((string*)_value+index);
+}
+
 Game_object* Symbol::get_game_object_value(int index) {
+	switch(get_type()) {
+		case TRIANGLE_ARRAY:
+			return ((Triangle*)_value+index);
+			break;
+		case PIXMAP_ARRAY:
+			return ((Pixmap*)_value+index);
+			break;
+		case CIRCLE_ARRAY:
+			return ((Circle*)_value+index);
+			break;
+		case RECTANGLE_ARRAY:
+			return ((Rectangle*)_value+index);
+			break;
+		case TEXTBOX_ARRAY:
+			return ((Textbox*)_value+index);
+			break;
+		default:
+			break;
+	}
 	return ((Game_object*)_value+index);
 }
 
@@ -125,7 +156,7 @@ void Symbol::printSymbol(ostream &os){
 		os << getArrType() << " " << getName() << " = " << get_double_value() << "\n";
 	} else if (getArrType() == "string"){
 		os << getType() << " " << getName() << " = " << "\"" << get_string_value() << "\"\n";
-	} else if (getArrType() == "game_object") {
+	} else if ((get_type() & GAME_OBJECT) && !(get_type() & ARRAY)) {
 		get_game_object_value()->print(getName(),os);
 	} else if (getArrType() == "int array") {
 		for (int j = 0; j < getArrSize(); ++j) {
@@ -139,10 +170,15 @@ void Symbol::printSymbol(ostream &os){
 		for (int j = 0; j < getArrSize(); ++j) {
 			os << getType() << " " << getName() << "[" << j << "] = \"" << get_string_value(j) << "\"\n";
 		}
-	} else if (getArrType() == "game_object array") {
+	} else if (get_type() & GAME_OBJECT_ARRAY) {
+		stringstream ss;
 		for (int j = 0; j < getArrSize(); ++j) {
-			get_game_object_value(j)->print(getName(),os);
+			ss << getName() << "[" << j << "]";
+			get_game_object_value(j)->print(ss.str(),os);
+			ss.str("");
 		}
+	} else if (getArrType() == "animation_block") {
+		os << getType() << " " << getName() << "\n";
 	}
 	/*
 	if (is_game_object() && getArrSize() < 0) {

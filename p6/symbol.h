@@ -11,6 +11,7 @@
 #include "textbox.h"
 #include "pixmap.h"
 #include "triangle.h"
+#include "animation_block.h"
 
 using namespace std;
 
@@ -37,9 +38,12 @@ public:
 	const double get_double_value();
 	const double get_double_value(int);
 	string get_string_value();
+	string* getStringValue();
 	string get_string_value(int);
+	string* getStringValue(int);
 	Game_object* get_game_object_value();
 	Game_object* get_game_object_value(int);
+	Animation_block* get_animation_block_value();
 
 	bool is_game_object();
 	void printSymbol(ostream&);
