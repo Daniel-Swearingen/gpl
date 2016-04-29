@@ -47,6 +47,7 @@ public:
 	double getDouble();
 	string *getString();
 	Operator_type getOp();
+	Variable* getVar();
 
 private:
 	int _type;			//0 = int, 1 = double, 2 = string
@@ -56,7 +57,7 @@ private:
 	string _stringE;
 	Animation_block *_animation_blockE;
 	Operator_type _op;
-	Variable *_var;
+	Variable *_var = NULL;
 	Expression *l = NULL;
 	Expression *r = NULL;
 	Expression *p;

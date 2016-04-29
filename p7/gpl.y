@@ -8,7 +8,6 @@ extern int line_count;            // current line in the input; from record.l
 #include "error.h"                // class for printing errors (used by gpl)
 #include "parser.h"
 #include <iostream>
-#include <string>
 #include "symbol_table.h"
 #include "variable.h"
 using namespace std;
@@ -16,19 +15,21 @@ using namespace std;
 Symbol_table symbolTable;
 Game_object *object_under_construction;
 string object_under_construction_name;
+stack<Statement_block*> statement_block_stack;
+Window::Keystroke ks;
 %} 
 
 
 
 %union {
- int            union_int;
- std::string    *union_string;  // MUST be a pointer to a string (this sucks!)
- double         union_double;
- char           union_char;
- Gpl_type       union_Gpl_type;
- Expression     *union_Expression;
- Operator_type  union_Operator_type;
- Symbol*        union_Symbol;
+ int                    union_int;
+ std::string            *union_string;  // MUST be a pointer to a string (this sucks!)
+ double                 union_double;
+ char                   union_char;
+ Gpl_type               union_Gpl_type;
+ Expression             *union_Expression;
+ Operator_type          union_Operator_type;
+ Symbol*                union_Symbol;
 }
 
 %error-verbose
@@ -156,6 +157,8 @@ string object_under_construction_name;
 %type <union_Expression> variable
 %type <union_Operator_type> math_operator
 %type <union_Operator_type> geometric_operator
+
+%type <union_Keystroke> keystroke
 
 %% // indicates the start of the rules
 
@@ -500,34 +503,81 @@ check_animation_parameter:
 
 //---------------------------------------------------------------------
 on_block:
-    T_ON keystroke statement_block
+    T_ON keystroke statement_block {
+    }
     ;
 
 //---------------------------------------------------------------------
 keystroke:
-    T_SPACE
-    | T_UPARROW
-    | T_DOWNARROW
-    | T_LEFTARROW
-    | T_RIGHTARROW
-    | T_LEFTMOUSE_DOWN
-    | T_MIDDLEMOUSE_DOWN
-    | T_RIGHTMOUSE_DOWN
-    | T_LEFTMOUSE_UP
-    | T_MIDDLEMOUSE_UP
-    | T_RIGHTMOUSE_UP
-    | T_MOUSE_MOVE
-    | T_MOUSE_DRAG
-    | T_AKEY 
-    | T_SKEY 
-    | T_DKEY 
-    | T_FKEY 
-    | T_HKEY 
-    | T_JKEY 
-    | T_KKEY 
-    | T_LKEY 
-    | T_WKEY 
-    | T_F1
+    T_SPACE {
+        ks = Window::SPACE;
+    }
+    | T_UPARROW {
+        ks = Window::UPARROW;
+    }
+    | T_DOWNARROW {
+        ks = Window::DOWNARROW;
+    }
+    | T_LEFTARROW {
+        ks = Window::LEFTARROW;
+    }
+    | T_RIGHTARROW {
+        ks = Window::RIGHTARROW;
+    }
+    | T_LEFTMOUSE_DOWN {
+        ks = Window::LEFTMOUSE_DOWN;
+    }
+    | T_MIDDLEMOUSE_DOWN {
+        ks = Window::MIDDLEMOUSE_DOWN;
+    }
+    | T_RIGHTMOUSE_DOWN {
+        ks = Window::RIGHTMOUSE_DOWN;
+    }
+    | T_LEFTMOUSE_UP {
+        ks = Window::RIGHTMOUSE_UP;
+    }
+    | T_MIDDLEMOUSE_UP {
+        ks = Window::MIDDLEMOUSE_UP;
+    }
+    | T_RIGHTMOUSE_UP {
+        ks = Window::RIGHTMOUSE_UP;
+    }
+    | T_MOUSE_MOVE {
+        ks = Window::MOUSE_MOVE;
+    }
+    | T_MOUSE_DRAG {
+        ks = Window::MOUSE_DRAG;
+    }
+    | T_AKEY {
+        ks = Window::AKEY;
+    }
+    | T_SKEY {
+        ks = Window::SKEY;
+    }
+    | T_DKEY {
+        ks = Window::DKEY;
+    }
+    | T_FKEY {
+        ks = Window::FKEY;
+    }
+    | T_HKEY {
+        ks = Window::HKEY;
+    }
+    | T_JKEY {
+        ks = Window::JKEY;
+    }
+    | T_KKEY {
+        ks = Window::KKEY;
+    }
+    | T_LKEY {
+        ks = Window::LKEY;
+    }
+    | T_WKEY {
+        ks = Window::WKEY;
+    }
+    | T_F1 {
+        ks = Window::F1;
+    }
     ;
 
 //---------------------------------------------------------------------
@@ -543,27 +593,46 @@ statement_block:
 
 //---------------------------------------------------------------------
 statement_block_creator:
+    {
+       statement_block_stack.push(new Statement_block());
+    }
     // this goes to nothing so that you can put an action here in p7
     ;
 
 //---------------------------------------------------------------------
 end_of_statement_block:
+    {
+        statement_block_stack.pop();
+    }
     // this goes to nothing so that you can put an action here in p7
     ;
 
 //---------------------------------------------------------------------
 statement_list:
-    statement_list statement
-    | empty
+    statement_list statement 
+    | empty {
+        Event_manager* em = Event_manager::instance();
+        em->addStatementBlock(ks,statement_block_stack.top());
+    }
     ;
 
 //---------------------------------------------------------------------
 statement:
-    if_statement
-    | for_statement
-    | assign_statement T_SEMIC
-    | print_statement T_SEMIC
-    | exit_statement T_SEMIC
+    if_statement {
+
+    }
+    | for_statement {
+
+    }
+    | assign_statement T_SEMIC {
+
+    }
+    | print_statement T_SEMIC {
+
+    }
+    | exit_statement T_SEMIC {
+
+    }
     ;
 
 //---------------------------------------------------------------------
@@ -579,19 +648,35 @@ for_statement:
 
 //---------------------------------------------------------------------
 print_statement:
-    T_PRINT T_LPAREN expression T_RPAREN
+    T_PRINT T_LPAREN expression T_RPAREN {
+        if ($3->getType() == 2) {
+            statement_block_stack.top()->addStatement(new Print_statement($3,$1));
+        } else {
+            //error
+        }
+    }
     ;
 
 //---------------------------------------------------------------------
 exit_statement:
-    T_EXIT T_LPAREN expression T_RPAREN
+    T_EXIT T_LPAREN expression T_RPAREN {
+        if ($3->getType() == 0) {
+            statement_block_stack.top()->addStatement(new Exit_statement($3));
+        }
+    }
     ;
 
 //---------------------------------------------------------------------
 assign_statement:
-    variable T_ASSIGN expression
-    | variable T_PLUS_ASSIGN expression
-    | variable T_MINUS_ASSIGN expression
+    variable T_ASSIGN expression {
+        statement_block_stack.top()->addStatement(new Assign_statement($1->getVar(),$3,Assign_statement::ASSIGN));
+    }
+    | variable T_PLUS_ASSIGN expression {
+
+    }
+    | variable T_MINUS_ASSIGN expression {
+
+    }
     ;
 
 //---------------------------------------------------------------------

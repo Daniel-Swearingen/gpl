@@ -28,15 +28,18 @@ class Statement_block;
 
 class Event_manager
 {
-  public:
+public:
 
     static Event_manager *instance();
+    void addStatementBlock(Window::Keystroke,Statement_block*);
 
     void execute_handlers(Window::Keystroke keystroke);
 
     ~Event_manager();
 
-  private:
+private:
+
+    std::vector<Statement_block*> _events[24];
     // hide default constructor because this is a singleton
     Event_manager();
 

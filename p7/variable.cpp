@@ -119,3 +119,7 @@ bool Variable::getIsMemberVariable() {
 Animation_block* Variable::getAnimationBlock() {
 	return getSymbol()->get_animation_block_value();
 }
+
+string Variable::getMember() {
+	return member;
+}

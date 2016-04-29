@@ -26,8 +26,15 @@
 //   in a .h file, you will have to put "std::string" in the union instead
 //   of "string"
 #include "expression.h"
+
+#include "event_manager.h"
 #include "gpl_type.h"
+#include "window.h"
+#include "print_statement.h"
+#include "exit_statement.h"
+#include "assign_statement.h"
 #include <string>
+#include <stack>
 #include "y.tab.h"
 
 #endif // #ifndef PARSER_H

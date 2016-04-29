@@ -1,23 +1,21 @@
 // updated 2/14/16
 
 #include "statement_block.h"
-#include "gpl_assert.h"
+#include "statement.h"
 using namespace std;
 
-
-Statement_block::Statement_block()
-{
+Statement_block::Statement_block(){
 
 }
 
 // this function is called for all non-animation_block statement_blocks
 // Implement it for p7
-void Statement_block::execute()
-{
-  // This function should be defined before it is ever called
-  // This assert will cause the program to abort if this function 
-  // is called before it is implemented.
+void Statement_block::execute(){
+	for (vector<Statement*>::iterator it = _statements.begin(); it != _statements.end(); ++it) {
+		(*it)->execute();
+	}
+}
 
-  // *** ==> Remove this assert when you implement this function
-  assert(false);
+void Statement_block::addStatement(Statement* statement) {
+	_statements.push_back(statement);
 }

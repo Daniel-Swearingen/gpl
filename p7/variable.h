@@ -1,9 +1,12 @@
 #ifndef VARIABLE_H
 #define VARIABLE_H
 class Expression;
+
 #include "symbol.h"
 #include "expression.h"
 #include "animation_block.h"
+class Symbol;
+using namespace std;
 
 class Variable {
 public:
@@ -20,6 +23,7 @@ public:
 	string* getString();
 	bool getIsMemberVariable();
 	Animation_block* getAnimationBlock();
+	string getMember();
 
 private:
 	bool isMemberVariable = false;

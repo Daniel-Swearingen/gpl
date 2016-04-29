@@ -57,7 +57,16 @@ Expression::Expression(Expression *e1 ,Operator_type op,Expression *e2) {
 
 Expression::Expression(Variable *var) {
 	setVar(var);
-	if (var->getType() & INT) {
+	/*if (var->getSymbol()->get_type() == INT_ARRAY) {
+		setType(0);
+		setInt(var->getSymbol()->get_int_value(var->getExpression()->eval_int()));
+	} else if (var->getSymbol()->get_type() == DOUBLE_ARRAY) {
+		setType(1);
+		setDouble(var->getSymbol()->get_double_value(var->getExpression()->eval_int()));
+	} else if (var->getSymbol()->get_type() == STRING_ARRAY) {
+		setType(2);
+		setString(var->getSymbol()->get_string_value(var->getExpression()->eval_int()));
+	} else */if (var->getType() & INT) {
 		setType(0);
 		setInt(var->getInt());
 	} else if (var->getType() & DOUBLE) {
@@ -811,13 +820,26 @@ int Expression::getType() {
 }
 
 int Expression::getInt() {
+	if (_var != NULL) {
+		return _var->getInt();
+	}
 	return _intE;
 }
 
 double Expression::getDouble() {
+	if (_var != NULL) {
+		return _var->getDouble();
+	}
 	return _doubleE;
 }
 
 string* Expression::getString() {
+	if (_var != NULL) {
+		return _var->getString();
+	}
 	return &_stringE;
+}
+
+Variable* Expression::getVar() {
+	return _var;
 }

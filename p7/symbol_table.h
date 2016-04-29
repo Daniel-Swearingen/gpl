@@ -26,4 +26,3 @@ private:
     Symbol_table(const Symbol_table &);
     const Symbol_table &operator=(const Symbol_table &);
 };
-
