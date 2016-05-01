@@ -33,6 +33,8 @@
 #include "print_statement.h"
 #include "exit_statement.h"
 #include "assign_statement.h"
+#include "if_statement.h"
+#include "for_statement.h"
 #include <string>
 #include <stack>
 #include "y.tab.h"

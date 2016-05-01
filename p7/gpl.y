@@ -30,6 +30,9 @@ Window::Keystroke ks;
  Expression             *union_Expression;
  Operator_type          union_Operator_type;
  Symbol*                union_Symbol;
+ Window::Keystroke      union_Keystroke;
+ Statement_block*       union_Statement_block;
+ Statement*             union_Statement;
 }
 
 %error-verbose
@@ -159,6 +162,15 @@ Window::Keystroke ks;
 %type <union_Operator_type> geometric_operator
 
 %type <union_Keystroke> keystroke
+%type <union_Statement_block> statement_block
+%type <union_Statement_block> end_of_statement_block
+%type <union_Statement_block> if_block
+%type <union_Statement> statement
+%type <union_Statement> if_statement
+%type <union_Statement> for_statement
+%type <union_Statement> print_statement
+%type <union_Statement> assign_statement
+%type <union_Statement> exit_statement
 
 %% // indicates the start of the rules
 
@@ -504,91 +516,100 @@ check_animation_parameter:
 //---------------------------------------------------------------------
 on_block:
     T_ON keystroke statement_block {
+        Event_manager* em = Event_manager::instance();
+        em->addStatementBlock($2,$3);
     }
     ;
 
 //---------------------------------------------------------------------
 keystroke:
     T_SPACE {
-        ks = Window::SPACE;
+        $$ = Window::SPACE;
     }
     | T_UPARROW {
-        ks = Window::UPARROW;
+        $$ = Window::UPARROW;
     }
     | T_DOWNARROW {
-        ks = Window::DOWNARROW;
+        $$ = Window::DOWNARROW;
     }
     | T_LEFTARROW {
-        ks = Window::LEFTARROW;
+        $$ = Window::LEFTARROW;
     }
     | T_RIGHTARROW {
-        ks = Window::RIGHTARROW;
+        $$ = Window::RIGHTARROW;
     }
     | T_LEFTMOUSE_DOWN {
-        ks = Window::LEFTMOUSE_DOWN;
+        $$ = Window::LEFTMOUSE_DOWN;
     }
     | T_MIDDLEMOUSE_DOWN {
-        ks = Window::MIDDLEMOUSE_DOWN;
+        $$ = Window::MIDDLEMOUSE_DOWN;
     }
     | T_RIGHTMOUSE_DOWN {
-        ks = Window::RIGHTMOUSE_DOWN;
+        $$ = Window::RIGHTMOUSE_DOWN;
     }
     | T_LEFTMOUSE_UP {
-        ks = Window::RIGHTMOUSE_UP;
+        $$ = Window::RIGHTMOUSE_UP;
     }
     | T_MIDDLEMOUSE_UP {
-        ks = Window::MIDDLEMOUSE_UP;
+        $$ = Window::MIDDLEMOUSE_UP;
     }
     | T_RIGHTMOUSE_UP {
-        ks = Window::RIGHTMOUSE_UP;
+        $$ = Window::RIGHTMOUSE_UP;
     }
     | T_MOUSE_MOVE {
-        ks = Window::MOUSE_MOVE;
+        $$ = Window::MOUSE_MOVE;
     }
     | T_MOUSE_DRAG {
-        ks = Window::MOUSE_DRAG;
+        $$ = Window::MOUSE_DRAG;
     }
     | T_AKEY {
-        ks = Window::AKEY;
+        $$ = Window::AKEY;
     }
     | T_SKEY {
-        ks = Window::SKEY;
+        $$ = Window::SKEY;
     }
     | T_DKEY {
-        ks = Window::DKEY;
+        $$ = Window::DKEY;
     }
     | T_FKEY {
-        ks = Window::FKEY;
+        $$ = Window::FKEY;
     }
     | T_HKEY {
-        ks = Window::HKEY;
+        $$ = Window::HKEY;
     }
     | T_JKEY {
-        ks = Window::JKEY;
+        $$ = Window::JKEY;
     }
     | T_KKEY {
-        ks = Window::KKEY;
+        $$ = Window::KKEY;
     }
     | T_LKEY {
-        ks = Window::LKEY;
+        $$ = Window::LKEY;
     }
     | T_WKEY {
-        ks = Window::WKEY;
+        $$ = Window::WKEY;
     }
     | T_F1 {
-        ks = Window::F1;
+        $$ = Window::F1;
     }
     ;
 
 //---------------------------------------------------------------------
 if_block:
-    statement_block_creator statement end_of_statement_block
-    | statement_block
+    statement_block_creator statement end_of_statement_block {
+        //statement_block_stack.top()->addStatement($2);
+        $$ = $3;
+    }
+    | statement_block {
+        $$ = $1;
+    }
     ;
 
 //---------------------------------------------------------------------
 statement_block:
-    T_LBRACE statement_block_creator statement_list T_RBRACE end_of_statement_block
+    T_LBRACE statement_block_creator statement_list T_RBRACE end_of_statement_block {
+        $$ = $5;
+    }
     ;
 
 //---------------------------------------------------------------------
@@ -602,6 +623,7 @@ statement_block_creator:
 //---------------------------------------------------------------------
 end_of_statement_block:
     {
+        $$ = new Statement_block(statement_block_stack.top());
         statement_block_stack.pop();
     }
     // this goes to nothing so that you can put an action here in p7
@@ -610,47 +632,58 @@ end_of_statement_block:
 //---------------------------------------------------------------------
 statement_list:
     statement_list statement 
-    | empty {
-        Event_manager* em = Event_manager::instance();
-        em->addStatementBlock(ks,statement_block_stack.top());
-    }
+    | empty
     ;
 
 //---------------------------------------------------------------------
 statement:
     if_statement {
-
+        $$ = $1;
     }
     | for_statement {
-
+        $$ = $1;
     }
     | assign_statement T_SEMIC {
-
+        $$ = $1;
     }
     | print_statement T_SEMIC {
-
+        $$ = $1;
     }
     | exit_statement T_SEMIC {
-
+        $$ = $1;
     }
     ;
 
 //---------------------------------------------------------------------
 if_statement:
-    T_IF T_LPAREN expression T_RPAREN if_block %prec IF_NO_ELSE
-    | T_IF T_LPAREN expression T_RPAREN if_block T_ELSE if_block
+    T_IF T_LPAREN expression T_RPAREN if_block %prec IF_NO_ELSE {
+        If_statement* st = new If_statement($3,$5);
+        statement_block_stack.top()->addStatement(st);
+        $$ = st;
+    }
+    | T_IF T_LPAREN expression T_RPAREN if_block T_ELSE if_block {
+        If_statement* st = new If_statement($3,$5,$7);
+        statement_block_stack.top()->addStatement(st);
+        $$ = st;
+    }
     ;
 
 //---------------------------------------------------------------------
 for_statement:
-    T_FOR T_LPAREN statement_block_creator assign_statement end_of_statement_block T_SEMIC expression T_SEMIC statement_block_creator assign_statement end_of_statement_block T_RPAREN statement_block
+    T_FOR T_LPAREN statement_block_creator assign_statement end_of_statement_block T_SEMIC expression T_SEMIC statement_block_creator assign_statement end_of_statement_block T_RPAREN statement_block {
+        For_statement* st = new For_statement($5,$7,$11,$13);
+        statement_block_stack.top()->addStatement(st);
+        $$ = st;
+    }
     ;
 
 //---------------------------------------------------------------------
 print_statement:
     T_PRINT T_LPAREN expression T_RPAREN {
         if ($3->getType() == 2) {
-            statement_block_stack.top()->addStatement(new Print_statement($3,$1));
+            Print_statement* st = new Print_statement($3,$1);
+            statement_block_stack.top()->addStatement(st);
+            $$ = st;
         } else {
             //error
         }
@@ -661,7 +694,9 @@ print_statement:
 exit_statement:
     T_EXIT T_LPAREN expression T_RPAREN {
         if ($3->getType() == 0) {
-            statement_block_stack.top()->addStatement(new Exit_statement($3));
+            Exit_statement* st = new Exit_statement($1,$3);
+            statement_block_stack.top()->addStatement(st);
+            $$ = st;
         }
     }
     ;
@@ -669,13 +704,19 @@ exit_statement:
 //---------------------------------------------------------------------
 assign_statement:
     variable T_ASSIGN expression {
-        statement_block_stack.top()->addStatement(new Assign_statement($1->getVar(),$3,Assign_statement::ASSIGN));
+        Assign_statement* st = new Assign_statement($1->getVar(),$3,Assign_statement::ASSIGN);
+        statement_block_stack.top()->addStatement(st);
+        $$ = st;
     }
     | variable T_PLUS_ASSIGN expression {
-
+        Assign_statement* st = new Assign_statement($1->getVar(),$3,Assign_statement::PLUSASSIGN);
+        statement_block_stack.top()->addStatement(st);
+        $$ = st;
     }
     | variable T_MINUS_ASSIGN expression {
-
+        Assign_statement* st = new Assign_statement($1->getVar(),$3,Assign_statement::MINUSASSIGN);
+        statement_block_stack.top()->addStatement(st);
+        $$ = st;
     }
     ;
 
@@ -713,8 +754,6 @@ variable:
                     }
                 }
             } else {
-               
-
                 $$ = new Expression(0);
             }   
         }

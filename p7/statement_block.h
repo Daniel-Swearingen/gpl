@@ -11,6 +11,8 @@ class Game_object;
 class Statement_block {
 public:
     Statement_block();
+    Statement_block(Statement_block*);
+    std::vector<Statement*> getVector();
     void addStatement(Statement*);
     void execute();
 private:
