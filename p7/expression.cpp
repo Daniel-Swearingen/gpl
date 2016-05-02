@@ -68,13 +68,13 @@ Expression::Expression(Variable *var) {
 		setString(var->getSymbol()->get_string_value(var->getExpression()->eval_int()));
 	} else */if (var->getType() & INT) {
 		setType(0);
-		setInt(var->getInt());
+		//setInt(var->getInt());
 	} else if (var->getType() & DOUBLE) {
 		setType(1);
-		setDouble(var->getDouble());
+		//setDouble(var->getDouble());
 	} else if (var->getType() & STRING) {
 		setType(2);
-		setString(var->getString());
+		//setString(var->getString());
 	} else {
 		setType(3);
 	}

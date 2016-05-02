@@ -30,7 +30,7 @@ Gpl_type Variable::getType() {
 	Gpl_type type;
 	if (getIsMemberVariable()){
 		if (getExpression() != NULL) {
-			getSymbol()->get_game_object_value(getExpression()->eval_int())->get_member_variable_type(member,type);
+			getSymbol()->get_game_object_value()->get_member_variable_type(member,type);
 			return type;
 		} else {
 			getSymbol()->get_game_object_value()->get_member_variable_type(member,type);
