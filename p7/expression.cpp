@@ -111,6 +111,13 @@ int Expression::eval_int() {
 			rVal = r->eval_int();
 		}
 	}
+	if (l == NULL && r == NULL) {
+		if (getType() == 0) {
+			return getInt();
+		} else {
+			return getDouble();
+		}
+	}
 
 	if ((op = getOp()) == PLUS) {
 		value = lVal + rVal;
@@ -590,13 +597,7 @@ int Expression::eval_int() {
 		value = lVal/rVal;
 	}
 	
-	if (l == NULL) {
-		if (getType() == 0) {
-			return getInt();
-		} else {
-			return getDouble();
-		}
-	}
+	
 	return value;
 }
 
