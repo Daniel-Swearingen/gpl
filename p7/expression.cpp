@@ -759,7 +759,7 @@ void Expression::setIniType(int iniType) {
 }
 
 void Expression::setType(int type) {
-	if (type < 0 || type > 2) {
+	if (type < 0 || type > 3) {
 		//error
 	} else {
 		_type = type;
