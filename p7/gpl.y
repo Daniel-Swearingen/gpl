@@ -461,7 +461,9 @@ block:
 
 //---------------------------------------------------------------------
 initialization_block:
-    T_INITIALIZATION statement_block
+    T_INITIALIZATION statement_block {
+        $2->execute();
+    }
     ;
 
 //---------------------------------------------------------------------
