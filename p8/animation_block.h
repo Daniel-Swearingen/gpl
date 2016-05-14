@@ -25,6 +25,7 @@
 
 #include <string>
 #include "statement_block.h"
+#include "error.h"
 class Symbol;
 
 class Animation_block : public Statement_block
@@ -47,7 +48,7 @@ private:
     Statement_block* _body = NULL;
     Symbol *m_parameter_symbol = NULL;
     std::string m_name = "";
-    bool _flag;
+    bool _flag = false;
     // disable default copy constructor and default assignment
     // done as a precaution, they should never be called
     Animation_block(const Animation_block &);

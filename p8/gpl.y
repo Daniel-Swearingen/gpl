@@ -171,18 +171,21 @@ Window::Keystroke ks;
 %type <union_Statement> print_statement
 %type <union_Statement> assign_statement
 %type <union_Statement> exit_statement
-
+%type <union_string> check_animation_parameter
 %% // indicates the start of the rules
 
 //---------------------------------------------------------------------
 program:
-    declaration_list block_list
+    declaration_list block_list{
+        Symbol_table* t = symbolTable.instance();
+        t->checkAnimationsForBodies();
+    }
     ;
 
 //---------------------------------------------------------------------
 declaration_list:
     declaration_list declaration
-    | empty
+    | empty 
     ;
 
 //---------------------------------------------------------------------
@@ -470,11 +473,28 @@ initialization_block:
 animation_block:
     T_ANIMATION T_ID T_LPAREN check_animation_parameter {
         Symbol_table* t = symbolTable.instance();
-        statement_block_stack.push(t->lookup(*$2)->get_animation_block_value());
+        if (t->lookup(*$2) == NULL) {
+            statement_block_stack.push(new Statement_block());
+            Error::error(Error::NO_FORWARD_FOR_ANIMATION_BLOCK,*$2);
+        } else {
+            if (t->lookup(*$2)->get_animation_block_value()->getFlag() == true) {
+                statement_block_stack.push(new Statement_block());
+                Error::error(Error::PREVIOUSLY_DEFINED_ANIMATION_BLOCK,*$2);
+            } else if (t->lookup(*$2)->get_animation_block_value()->get_parameter_symbol()->getName() != t->lookup(*$4)->getName()) {
+                statement_block_stack.push(new Statement_block());
+                Error::error(Error::ANIMATION_PARAM_DOES_NOT_MATCH_FORWARD);
+            } else {
+                statement_block_stack.push(t->lookup(*$2)->get_animation_block_value());
+            }
+        }
 
     } T_RPAREN T_LBRACE statement_list T_RBRACE end_of_statement_block {
+
         Symbol_table* t = symbolTable.instance();
-        t->lookup(*$2)->get_animation_block_value()->setBody($10);
+        if (t->lookup(*$2) != NULL) {
+            t->lookup(*$2)->get_animation_block_value()->setFlag(true);
+            t->lookup(*$2)->get_animation_block_value()->setBody($10);
+        }
     }
     ;
 
@@ -486,7 +506,7 @@ animation_parameter:
             Error::error(Error::ANIMATION_PARAMETER_NAME_NOT_UNIQUE,*$2);
             $$ = NULL;
         } else {
-            Symbol *sym = new Symbol();
+        Symbol *sym = new Symbol();
             if ($1 == TRIANGLE) {
                 sym->set(new Triangle());
                 sym->setType(TRIANGLE);
@@ -515,19 +535,19 @@ animation_parameter:
 //---------------------------------------------------------------------
 check_animation_parameter:
     T_TRIANGLE T_ID {
-
+        $$ = $2;
     }
     | T_PIXMAP T_ID {
-
+        $$ = $2;
     }
     | T_CIRCLE T_ID {
-
+        $$ = $2;
     }
     | T_RECTANGLE T_ID {
-
+        $$ = $2;
     }
     | T_TEXTBOX T_ID {
-
+        $$ = $2;
     }
     ;
 
@@ -739,6 +759,17 @@ exit_statement:
 //---------------------------------------------------------------------
 assign_statement:
     variable T_ASSIGN expression {
+        Symbol_table* t = symbolTable.instance();
+        if ($3->getVar() != NULL) {
+            if ($1->getVar()->getSymbol()->get_type() & GAME_OBJECT && $3->getVar()->getSymbol()->get_type() & ANIMATION_BLOCK) {
+                
+                Symbol* param = $3->getVar()->getSymbol()->get_animation_block_value()->get_parameter_symbol();
+                if ($1->getVar()->getSymbol()->getType() != param->getType()) {
+                    Error::error(Error::ANIMATION_BLOCK_ASSIGNMENT_PARAMETER_TYPE_ERROR,$1->getVar()->getSymbol()->getType(),param->getType());
+                }
+                
+            }
+        }
         if ($1->getType() < $3->getType()) {
             string t1,t2;
             if ($1->getType() == 0) {
@@ -765,6 +796,7 @@ assign_statement:
         }
     }
     | variable T_PLUS_ASSIGN expression {
+
         if ($1->getVar() != NULL && $1->getVar()->getType() == GAME_OBJECT) {
             Error::error(Error::INVALID_LHS_OF_PLUS_ASSIGNMENT,$1->getVar()->getSymbol()->getName(),$1->getVar()->getSymbol()->get_game_object_value()->type());
         } else if ($1->getType() < $3->getType()) {
@@ -1122,7 +1154,19 @@ expression:
         $$ = new Expression($3,$1,NULL);
     }
     | variable geometric_operator variable {
-        $$ = new Expression($1,$2,$3);
+        if ($1->getVar()->getType() != GAME_OBJECT && $3->getVar()->getType() != GAME_OBJECT) {
+            $$ = new Expression(0);
+            Error::error(Error::OPERAND_MUST_BE_A_GAME_OBJECT,$1->getVar()->getSymbol()->getName());
+            Error::error(Error::OPERAND_MUST_BE_A_GAME_OBJECT,$3->getVar()->getSymbol()->getName());
+        } else if ($1->getVar()->getType() != GAME_OBJECT) {
+            Error::error(Error::OPERAND_MUST_BE_A_GAME_OBJECT,$1->getVar()->getSymbol()->getName());
+            $$ = new Expression(0);
+        } else if ($3->getVar()->getType() != GAME_OBJECT) {
+            Error::error(Error::OPERAND_MUST_BE_A_GAME_OBJECT,$3->getVar()->getSymbol()->getName());
+            $$ = new Expression(0);
+        } else {
+            $$ = new Expression($1,$2,$3);
+        }
     }
     ;
 

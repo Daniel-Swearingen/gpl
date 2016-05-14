@@ -21,9 +21,13 @@ void Animation_block::execute(Game_object *argument) {
     Symbol_table* t = symbolTable.instance();
     Game_object* temp = m_parameter_symbol->get_game_object_value();
 
-	m_parameter_symbol->set(argument);
-	_body->execute();
-	m_parameter_symbol->set(temp);
+	if (_flag) {
+		m_parameter_symbol->set(argument);
+		_body->execute();
+		m_parameter_symbol->set(temp);
+	} else {
+        Error::error(Error::NO_BODY_PROVIDED_FOR_FORWARD,m_name);
+	}
 }
 
 void Animation_block::setFlag(bool flag) {

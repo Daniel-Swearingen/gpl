@@ -1,5 +1,6 @@
 #include "symbol_table.h"
-
+#include "gpl_type.h"
+#include "error.h"
 using namespace std;
 
 Symbol_table* Symbol_table::m_instance = 0;
@@ -68,5 +69,17 @@ void Symbol_table::add(Symbol *symbol) {
 		table[symbol->getName()] = symbol;
 	} else {
 		Error::error(Error::PREVIOUSLY_DECLARED_VARIABLE,symbol->getName());
+	}
+}
+
+void Symbol_table::checkAnimationsForBodies() {
+	Symbol* tempSym;
+	for(unordered_map<string,Symbol*>::iterator it = table.begin(); it != table.end(); ++it) {
+		tempSym = it->second;
+		if (tempSym->get_type() == ANIMATION_BLOCK) {
+			if (!(tempSym->get_animation_block_value()->getFlag())) {
+		        Error::error(Error::NO_BODY_PROVIDED_FOR_FORWARD,it->first);
+			}
+		}
 	}
 }

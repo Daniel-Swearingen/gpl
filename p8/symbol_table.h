@@ -16,6 +16,7 @@ public:
     Symbol* lookup(string);
     void print(ostream&);
     void add(Symbol*);
+    void checkAnimationsForBodies();
     unordered_map<string,Symbol*> table;
     Symbol_table() {};
 private:
